@@ -3,6 +3,7 @@ import { Roboto_Condensed } from "next/font/google";
 import "./globals.css";
 import ClientProvider from "@/ClientProvider";
 import { Toaster } from "sonner";
+import { LoadingBar } from "@/components/ui/loading-bar";
 
 const robotoCondensed = Roboto_Condensed({
   weight: "600", // Regular weight
@@ -23,8 +24,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={robotoCondensed.className}>
       <body>
+        <LoadingBar />
         <ClientProvider>{children}</ClientProvider>
-        {/* <Toaster position="top-right" /> */}
+        <Toaster position="top-right" />
       </body>
     </html>
   );

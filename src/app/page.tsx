@@ -19,6 +19,7 @@ import Link from "next/link";
 import Footer from "@/components/Footer";
 import { getThreeCars } from "@/actions/cars";
 import { useEffect, useState } from "react";
+import { CarCardSkeletonGrid } from "@/components/ui/car-card-skeleton";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -30,11 +31,19 @@ export default function Home() {
   console.log(data); //to get user data
 
   const [featuredCars, setFeaturedCars] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchCars() {
-      const cars = await getThreeCars(); // calling your function
-      setFeaturedCars(cars);
+      setIsLoading(true);
+      try {
+        const cars = await getThreeCars(); // calling your function
+        setFeaturedCars(cars);
+      } catch (error) {
+        console.error("Error fetching cars:", error);
+      } finally {
+        setIsLoading(false);
+      }
     }
 
     fetchCars();
@@ -77,49 +86,53 @@ export default function Home() {
             </Link>
           </div>
           {/* href={`/car/${car.id}`} */}
-          <div className="grid md:grid-cols-3 gap-6">
-            {featuredCars.map((car) => (
-              <Link key={car._id} href={`/car/${car._id}`}>
-                <Card className="overflow-hidden group shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-hover)] transition-all rounded-2xl">
-                  <div className="relative  rounded-t-xl overflow-hidden">
-                    <Image
-                      src={car.image[0]}
-                      alt={car.name}
-                      width={400}
-                      height={250}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300 rounded-t-2xl"
-                    />
-                  </div>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-xl font-semibold ">{car.name}</h3>
-                        <Badge variant="secondary" className="mt-2 mr-4 w-fit ">
-                          {car.type}
-                        </Badge>
+          {isLoading ? (
+            <CarCardSkeletonGrid count={3} />
+          ) : (
+            <div className="grid md:grid-cols-3 gap-6">
+              {featuredCars.map((car) => (
+                <Link key={car._id} href={`/car/${car._id}`}>
+                  <Card className="overflow-hidden group shadow-[var(--shadow-card)] hover:shadow-[var(--shadow-hover)] transition-all rounded-2xl">
+                    <div className="relative  rounded-t-xl overflow-hidden">
+                      <Image
+                        src={car.image[0]}
+                        alt={car.name}
+                        width={400}
+                        height={250}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300 rounded-t-2xl"
+                      />
+                    </div>
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-xl font-semibold ">{car.name}</h3>
+                          <Badge variant="secondary" className="mt-2 mr-4 w-fit ">
+                            {car.type}
+                          </Badge>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-primary">
+                            ₹{car.price}
+                          </p>
+                          <p className="text-sm text-muted-foreground">per day</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-primary">
-                          ₹{car.price}
-                        </p>
-                        <p className="text-sm text-muted-foreground">per day</p>
+                    </CardHeader>
+                    <CardFooter className="flex justify-between text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        {/* <Star className="h-4 w-4 fill-accent text-accent" />
+                        <span>{car.rating}</span> */}
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardFooter className="flex justify-between text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      {/* <Star className="h-4 w-4 fill-accent text-accent" />
-                      <span>{car.rating}</span> */}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Users className="h-4 w-4" />
-                      <span>{car.trips} trips</span>
-                    </div>
-                  </CardFooter>
-                </Card>
-              </Link>
-            ))}
-          </div>
+                      <div className="flex items-center gap-1">
+                        <Users className="h-4 w-4" />
+                        <span>{car.trips} trips</span>
+                      </div>
+                    </CardFooter>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
           <Button className="mx-auto mt-10 block" variant={"own"}>
             Browser more
           </Button>

@@ -18,15 +18,19 @@ import axios from "axios";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
+import { Loader2 } from "lucide-react";
 
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const router = useRouter();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       console.log({ name, email, password });
       const result = await axios.post("/api/auth/register", {
@@ -38,6 +42,8 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
       console.log(result);
     } catch (error) {
       console.log(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -59,6 +65,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                 type="text"
                 placeholder="John Doe"
                 required
+                disabled={isLoading}
                 onChange={(e) => setName(e.target.value)}
               />
             </Field>
@@ -69,6 +76,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                 type="email"
                 placeholder="m@example.com"
                 required
+                disabled={isLoading}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </Field>
@@ -78,6 +86,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                 id="password"
                 type="password"
                 required
+                disabled={isLoading}
                 onChange={(e) => setPassword(e.target.value)}
               />
               <FieldDescription>
@@ -87,13 +96,27 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 
             <FieldGroup>
               <Field>
-                <Button type="submit">Create Account</Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating account...
+                    </>
+                  ) : (
+                    "Create Account"
+                  )}
+                </Button>
                 <Button
                   variant="outline"
                   type="button"
+                  disabled={isLoading || isGoogleLoading}
                   onClick={async () => {
+                    setIsGoogleLoading(true);
                     await signIn("google", { callbackUrl: "/" });
                   }}>
+                  {isGoogleLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
                   Sign up with Google
                 </Button>
                 <FieldDescription

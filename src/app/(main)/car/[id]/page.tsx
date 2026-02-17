@@ -1,65 +1,75 @@
-
-// "use client";
+"use client";
 
 import { getCarById } from "@/actions/cars";
-import CarDetails from "../../_components/car-details"
+import CarDetails from "../../_components/car-details";
 import Header from "@/components/header";
-
-// import { useParams } from "next/navigation";
-
-// const CarPage = () => {
-//   const params = useParams();
-//   const id = params.id as string;
-
-//   console.log("Car ID:", id); // browser console
-
-//   return <div>Car ID: {id}</div>;
-// };
-
-// export default CarPage;
-
-
-
+import { useEffect, useState } from "react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface PageProps {
   params: Promise<{
-    id: string
-  }>
+    id: string;
+  }>;
 }
 
-export default async function CarPage({ params }: PageProps) {
-  // ✅ unwrap params
-  const { id } = await params
+export default function CarPage({ params }: PageProps) {
+  const [carData, setCarData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [carId, setCarId] = useState<string | null>(null);
 
-  try {
-    const res = await getCarById(id)
+  useEffect(() => {
+    async function loadCar() {
+      try {
+        const { id } = await params;
+        setCarId(id);
+        setIsLoading(true);
+        const res = await getCarById(id);
 
-    if (!res.success) {
-      return (
-        <div className="text-center py-20">
-          <h2 className="text-xl font-semibold">
-            Car not found
-          </h2>
-        </div>
-      )
+        if (!res.success) {
+          setError("Car not found");
+        } else {
+          setCarData(res.data);
+        }
+      } catch (err) {
+        console.error("Error loading car:", err);
+        setError("Something went wrong");
+      } finally {
+        setIsLoading(false);
+      }
     }
 
-    const data = res.data
+    loadCar();
+  }, [params]);
 
-    return (<>
-        <Header/>
-      <div className="container mx-auto px-4 py-8">
-        <CarDetails car={data} />
-      </div>
-      </>
-    )
-  } catch (error) {
+  if (isLoading) {
     return (
-      <div className="text-center py-20">
-        <h2 className="text-xl font-semibold">
-          Something went wrong
-        </h2>
-      </div>
-    )
+      <>
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <LoadingSpinner size="lg" text="Loading car details..." centered />
+        </div>
+      </>
+    );
   }
+
+  if (error || !carData) {
+    return (
+      <>
+        <Header />
+        <div className="text-center py-20">
+          <h2 className="text-xl font-semibold">{error || "Car not found"}</h2>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Header />
+      <div className="container mx-auto px-4 py-8">
+        <CarDetails car={carData} />
+      </div>
+    </>
+  );
 }
