@@ -329,7 +329,7 @@ export async function updateCarStatus(
     const user = await User.findById(session.user.id);
     if (!user) throw new Error("User not found");
 
-    const updateData = {};
+       const updateData: { status?: string; featured?: boolean } = {};
 
     if (status !== undefined) {
       updateData.status = status;
@@ -352,7 +352,7 @@ export async function updateCarStatus(
     console.error("Error updating car status:", error);
     return {
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 }
