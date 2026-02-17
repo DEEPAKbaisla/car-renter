@@ -33,6 +33,7 @@ const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           image: user.image,
+          role: user.role,
         };
       },
     }),
@@ -50,9 +51,11 @@ const authOptions: NextAuthOptions = {
           let existuser = await User.create({
             email: user?.email,
             name: user?.name,
+            role: "user",
           });
         }
         user.id = existUser?._id as string;
+          (user as any).role = existUser.role;
       }
       return true;
     },
@@ -63,6 +66,7 @@ const authOptions: NextAuthOptions = {
         token.name = user.name;
         token.email = user.email;
         token.image = user.image;
+        token.role = (user as any).role;
       }
       return token;
     },
@@ -72,6 +76,7 @@ const authOptions: NextAuthOptions = {
         session.user.name = token.name;
         session.user.email = token.email;
         session.user.image = token.image as string;
+        session.user.role = token.role as string;
       }
       return session;
     },

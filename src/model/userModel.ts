@@ -1,15 +1,19 @@
 import mongoose from "mongoose";
-interface schema {
+type UserRole = "user" | "admin";
+
+interface UserDocument {
   _id?: mongoose.Types.ObjectId;
   name: string;
-  image: string;
+  image?: string;
   email: string;
+  role: UserRole;
   password?: string;
+  isBlocked?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-const userSchema = new mongoose.Schema<schema>(
+const userSchema = new mongoose.Schema<UserDocument>(
   {
     name: {
       type: String,
@@ -24,6 +28,16 @@ const userSchema = new mongoose.Schema<schema>(
       type: String,
       required: false,
     },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
+
     image: {
       type: String,
     },
@@ -31,6 +45,5 @@ const userSchema = new mongoose.Schema<schema>(
   { timestamps: true }
 );
 
-
-const User =mongoose.models?.User || mongoose.model("User" ,userSchema);
-export default User
+const User = mongoose.models?.User || mongoose.model("User", userSchema);
+export default User;
