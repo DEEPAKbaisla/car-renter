@@ -1,8 +1,8 @@
 "use server";
 import authOptions from "@/lib/auth";
 import connectDb from "@/lib/db";
-import { extractSupabasePathFromUrl, serializeCarData } from "@/lib/helpers";
-import { supabaseAdmin } from "@/lib/superbase";
+import { serializeCarData } from "@/lib/helpers";
+import { imagekit } from "@/lib/image";
 import Car from "@/model/carModels";
 import User from "@/model/userModel";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -128,63 +128,50 @@ interface AddCarParams {
 
 export async function AddCar({ carData, images }: AddCarParams) {
   try {
-    // 1️⃣ Session check (NextAuth)
     const session = await getServerSession(authOptions);
     if (!session) throw new Error("Unauthorized: No session found");
 
-    // 2️⃣ DB + user
     await connectDb();
     const user = await User.findById(session.user.id);
     if (!user) throw new Error("User not found");
 
-    // ✅ 3️⃣ ADMIN CHECK (THIS IS REQUIRED)
     if (user.role !== "admin") {
       throw new Error("Unauthorized: Admin only");
     }
 
-    // 4️⃣ Prepare car
     const carId = uuidv4();
     const folderPath = `cars/${carId}`;
 
-    const imageUrls: string[] = [];
+    const imagesData: { url: string; fileId: string }[] = [];
     const imageArray = Array.isArray(images) ? images : [images];
 
-    // 5️⃣ Upload images
     for (let i = 0; i < imageArray.length; i++) {
       const imageData = imageArray[i];
 
-      const imageBuffer = Uint8Array.from(
-        Buffer.from(imageData.data, "base64"),
-      );
-
       const mimeMatch = imageData.type?.match(/image\/(.+)/);
       const fileExtension = mimeMatch ? mimeMatch[1] : "jpeg";
-
       const fileName = `image-${Date.now()}-${i}.${fileExtension}`;
-      const filePath = `${folderPath}/${fileName}`;
 
-      // ✅ 6️⃣ UPLOAD USING SERVICE ROLE (NO RLS ISSUES)
-      const { error } = await supabaseAdmin.storage
-        .from("car-images")
-        .upload(filePath, imageBuffer, {
-          contentType: imageData.type || `image/${fileExtension}`,
-          upsert: true,
-        });
+      const uploadResponse = await imagekit.upload({
+        file: imageData.data, // base64 string
+        fileName,
+        folder: folderPath,
+      });
 
-      if (error) {
-        console.error("Error uploading image:", error);
-        throw new Error(`Image upload failed: ${error.message}`);
+      if (!uploadResponse?.url || !uploadResponse?.fileId) {
+        throw new Error("Image upload failed");
       }
 
-      const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/car-images/${filePath}`;
-      imageUrls.push(publicUrl);
+      imagesData.push({
+        url: uploadResponse.url,
+        fileId: uploadResponse.fileId,
+      });
     }
 
-    if (imageUrls.length === 0) {
+    if (imagesData.length === 0) {
       throw new Error("No images uploaded");
     }
 
-    // 7️⃣ Save car in MongoDB
     const car = await Car.create({
       name: `${carData.make} ${carData.model}`,
       brand: carData.make,
@@ -210,9 +197,10 @@ export async function AddCar({ carData, images }: AddCarParams) {
       price: Number(carData.price),
 
       status: "available",
-      image: imageUrls,
+      image: imagesData,
       createdBy: user._id,
     });
+
     console.log("Saved car object:", car.toObject());
     revalidatePath("/admin/cars");
 
@@ -272,38 +260,45 @@ export async function getCars(search = "") {
   }
 }
 
+
 export async function deleteCar(id: string) {
   try {
+    if (!id) throw new Error("Car ID is required");
+
     const session = await getServerSession(authOptions);
     if (!session) throw new Error("Unauthorized: No session found");
-    // 2️⃣ DB + user
+
     await connectDb();
+
     const user = await User.findById(session.user.id);
     if (!user) throw new Error("User not found");
+
+    if (user.role !== "admin") {
+      throw new Error("Unauthorized: Only admins can delete cars");
+    }
 
     const car = await Car.findById(id);
     if (!car) throw new Error("Car not found");
 
+    // 🔥 Delete images from ImageKit
     if (Array.isArray(car.image) && car.image.length > 0) {
-      const paths = car.image
-        .map((url: string) => extractSupabasePathFromUrl(url))
-        .filter(Boolean);
-
-      console.log("Deleting Supabase files:", paths);
-
-      if (paths.length > 0) {
-        const { error } = await supabaseAdmin.storage
-          .from("car-images")
-          .remove(paths);
-
-        if (error) {
-          console.error("Supabase delete error:", error);
-          throw new Error("Failed to delete car images");
-        }
-      }
+      await Promise.all(
+        car.image.map(async (img: any) => {
+          if (img?.fileId) {
+            try {
+              await imagekit.deleteFile(img.fileId);
+            } catch (err) {
+              console.error("ImageKit delete error:", err);
+            }
+          }
+        }),
+      );
     }
+
     await Car.findByIdAndDelete(id);
+
     revalidatePath("/admin/cars");
+
     return {
       success: true,
       message: "Car deleted successfully",
@@ -316,7 +311,6 @@ export async function deleteCar(id: string) {
     };
   }
 }
-
 export async function updateCarStatus(
   id: string,
   { status, featured }: { status?: string; featured?: boolean },
@@ -329,7 +323,7 @@ export async function updateCarStatus(
     const user = await User.findById(session.user.id);
     if (!user) throw new Error("User not found");
 
-       const updateData: { status?: string; featured?: boolean } = {};
+    const updateData: { status?: string; featured?: boolean } = {};
 
     if (status !== undefined) {
       updateData.status = status;
@@ -358,36 +352,28 @@ export async function updateCarStatus(
 }
 
 export async function getThreeCars() {
-
   try {
     await connectDb();
 
-  const cars = await Car.find()
-    .sort({ createdAt: -1 })
-    .limit(3)
-    .lean();
+    const cars = await Car.find().sort({ createdAt: -1 }).limit(3).lean();
 
-  return JSON.parse(JSON.stringify(cars));
+    return JSON.parse(JSON.stringify(cars));
   } catch (error) {
     console.error("Error fetching featured cars:", error);
   }
 }
 
-export async function AllCars(){
-   try {
+export async function AllCars() {
+  try {
     await connectDb();
 
-  const cars = await Car.find()
-    .sort({ createdAt: -1 })
-    .lean();
+    const cars = await Car.find().sort({ createdAt: -1 }).lean();
 
-  return JSON.parse(JSON.stringify(cars));
+    return JSON.parse(JSON.stringify(cars));
   } catch (error) {
     console.error("Error fetching featured cars:", error);
   }
-
 }
-
 
 /////isko dekhana h abhi ...
 

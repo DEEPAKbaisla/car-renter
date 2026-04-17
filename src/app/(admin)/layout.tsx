@@ -1,7 +1,7 @@
 import Header from "@/components/header";
 import React from "react";
 import Sidebar from "./admin/_components/Sidebar";
-import { Toaster } from "sonner";
+
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -13,7 +13,6 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         <Sidebar />
       </div>
       <main className="md:pl-56 pt-[80px] h-full">{children}</main>
-      <Toaster richColors />
     </div>
   );
 };

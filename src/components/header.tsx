@@ -1,5 +1,5 @@
 "use client";
-import { Car, LayoutDashboard, LogOut, User,  } from "lucide-react";
+import { Car, LayoutDashboard, LogOut, User } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -33,7 +33,7 @@ const Header = () => {
           </span>
         </Link>
 
-        <div className="hidden md:flex gap-8 text-white font-medium">
+        <div className="hidden md:flex gap-8 text-white font-medium text-xl">
           <Link href="/">Home</Link>
           <Link href="/browse">Browser cars</Link>
         </div>
@@ -45,8 +45,12 @@ const Header = () => {
                 {data.user.image ? (
                   <img
                     src={data.user.image}
-                    alt='user'
-                    className="h-10 w-10 rounded-full border"
+                    alt="user"
+                    className="h-10 w-10 rounded-full border object-cover"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = "/user.webp";
+                    }}
                   />
                 ) : (
                   <User className="h-9 w-9 rounded-full bg-zinc-300 p-1" />

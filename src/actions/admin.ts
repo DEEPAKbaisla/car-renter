@@ -11,11 +11,3 @@ export async function getAdmin() {
   return notFound();
 }
 
-// import { auth } from "@/auth";
-
-// const session = await auth();
-
-// if (!session?.user?.id) {
-//   throw new Error("Unauthorized");
-// }
-

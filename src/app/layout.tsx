@@ -1,13 +1,21 @@
 import type { Metadata } from "next";
-import { Roboto_Condensed } from "next/font/google";
+import { Inter, Antonio } from "next/font/google";
 import "./globals.css";
 import ClientProvider from "@/ClientProvider";
 import { Toaster } from "sonner";
 import { LoadingBar } from "@/components/ui/loading-bar";
 
-const robotoCondensed = Roboto_Condensed({
-  weight: "600", // Regular weight
-  subsets: ["latin"], // Subset for Latin characters
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  weight: ["400", "500", "600", "700"],
+});
+
+const antonio = Antonio({
+  subsets: ["latin"],
+  variable: "--font-antonio",
+   weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -22,11 +30,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={robotoCondensed.className}>
+    <html lang="en" className={`${inter.variable} ${antonio.variable}`}>
       <body>
         <LoadingBar />
         <ClientProvider>{children}</ClientProvider>
-        <Toaster position="top-right" />
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   );

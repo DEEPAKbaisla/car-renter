@@ -357,26 +357,30 @@ const AddCarForm = () => {
       setValue("transmission", carDetails.transmission);
       setValue("description", carDetails.description);
 
-      if (uploadAiImage) {
-        const reader = new FileReader();
-        reader.onload = (e: ProgressEvent<FileReader>) => {
-          if (e.target && e.target.result ) {
-            setImagePreview((prev) => [...prev, e.target.result as string]);
-            setImageFiles((prev) => [...prev, uploadAiImage]);
-            setIsUploading(false);
-          }
-        };
-        reader.readAsDataURL(uploadAiImage);
+     if (uploadAiImage) {
+  const reader = new FileReader();
 
-        toast.success("Successfully extracted car details ", {
-          description: `Detected ${carDetails.year} ${carDetails.make} ${
-            carDetails.model
-          } with ${Math.round(carDetails.confidence * 100)}%confidence`,
-        });
-        setActiveTab("manual");
-      }
+  reader.onload = () => {
+    if (reader.result) {
+      setImagePreview((prev) => [...prev, reader.result as string]);
+      setImageFiles((prev) => [...prev, uploadAiImage]);
+      setIsUploading(false);
+    }
+  };
+
+  reader.readAsDataURL(uploadAiImage);
+
+  toast.success("Successfully extracted car details ", {
+    description: `Detected ${carDetails.year} ${carDetails.make} ${
+      carDetails.model
+    } with ${Math.round(carDetails.confidence * 100)}% confidence`,
+  });
+
+  setActiveTab("manual");
+}
     }
   }, [processImageResult, uploadAiImage]);
+
 
   const removeImage = (index: number) => {
     setImagePreview((prev) => prev.filter((_, i) => i !== index));
