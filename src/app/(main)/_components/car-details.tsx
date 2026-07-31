@@ -2,12 +2,16 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Fuel, Gauge, Users, Palette, Calendar, Route } from "lucide-react";
+import BookingModal from "./booking-modal";
 
 interface CarProps {
   car?: {
+    id: string;
     name: string;
     brand: string;
     model: string;
@@ -28,6 +32,17 @@ interface CarProps {
 
 export default function CarDetails({ car }: CarProps) {
   const [selectedImage, setSelectedImage] = useState(0);
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const { data: session } = useSession();
+  const router = useRouter();
+
+  const handleBookNow = () => {
+    if (!session) {
+      router.push("/login");
+      return;
+    }
+    setBookingOpen(true);
+  };
 
   if (!car) {
     return (
@@ -134,6 +149,7 @@ export default function CarDetails({ car }: CarProps) {
 
           {/* Book Now */}
           <Button
+            onClick={handleBookNow}
             className={`w-full mt-6 py-6 text-base font-medium rounded-xl transition-all ${
               car.status !== "available"
                 ? "bg-slate-200 text-slate-500 hover:bg-slate-200 cursor-not-allowed"
@@ -144,6 +160,14 @@ export default function CarDetails({ car }: CarProps) {
           </Button>
         </div>
       </div>
+
+      {car.id && (
+        <BookingModal
+          open={bookingOpen}
+          onOpenChange={setBookingOpen}
+          car={{ id: car.id, name: car.name, price: car.price }}
+        />
+      )}
     </div>
   );
 }

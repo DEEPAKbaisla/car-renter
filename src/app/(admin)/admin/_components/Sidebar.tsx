@@ -16,9 +16,9 @@ const routes = [
     href: "/admin/cars",
   },
   {
-    label: "Test Drives",
+    label: "Bookings",
     icon: Calendar,
-    href: "/admin/test-drives",
+    href: "/admin/bookings",
   },
   {
     label: "Settings",
@@ -33,7 +33,9 @@ const Sidebar = () => {
     <>
       <div className="hidden md:flex h-full flex-col overflow-y-auto bg-white border-r border-slate-200">
         {routes.map((route) => {
-          const isActive = pathname === route.href;
+          const isActive = route.href === "/admin"
+            ? pathname === "/admin"
+            : pathname.startsWith(route.href);
           return (
             <Link
               key={route.href}
@@ -55,7 +57,9 @@ const Sidebar = () => {
       {/* Mobile bottom tabs */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 flex justify-around items-center h-16 safe-area-pb">
         {routes.map((route) => {
-          const isActive = pathname === route.href;
+          const isActive = route.href === "/admin"
+            ? pathname === "/admin"
+            : pathname.startsWith(route.href);
           return (
             <Link
               key={route.href}

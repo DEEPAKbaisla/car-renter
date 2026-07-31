@@ -28,6 +28,12 @@ const authOptions: NextAuthOptions = {
         if (!isMatch) {
           throw new Error("incorrect Password");
         }
+        if (user.isBlocked) {
+          throw new Error("Account is not available");
+        }
+        if (user.isVerified !== true) {
+          throw new Error("Please verify your email before logging in");
+        }
         return {
           id: user._id,
           name: user.name,
@@ -48,14 +54,15 @@ const authOptions: NextAuthOptions = {
         await connectDb();
         let existUser = await User.findOne({ email: user.email });
         if (!existUser) {
-          let existuser = await User.create({
+          existUser = await User.create({
             email: user?.email,
             name: user?.name,
             role: "user",
+            isVerified: true,
           });
         }
-        user.id = existUser?._id as string;
-          (user as any).role = existUser.role;
+        user.id = existUser._id as string;
+        (user as any).role = existUser.role;
       }
       return true;
     },
@@ -67,6 +74,11 @@ const authOptions: NextAuthOptions = {
         token.email = user.email;
         token.image = user.image;
         token.role = (user as any).role;
+        token.isBlocked = false;
+      } else if (token.id) {
+        await connectDb();
+        const dbUser = await User.findById(token.id).select("isBlocked");
+        token.isBlocked = dbUser?.isBlocked ?? false;
       }
       return token;
     },

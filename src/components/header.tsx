@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import { Car, LayoutDashboard, LogOut, User } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
@@ -16,6 +17,11 @@ import {
 const Header = () => {
   const { data } = useSession();
   const role = data?.user?.role;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -30,7 +36,7 @@ const Header = () => {
       <nav className="sticky top-0 z-50 flex items-center justify-between w-full py-4 px-6 md:px-16 lg:px-24 bg-white/80 backdrop-blur-lg border-b border-slate-200/60 transition-all">
         <Link href="/" className="flex items-center gap-2.5 group">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-            <Image src="/favicon.ico" alt="Logo" width={20} height={20} className="brightness-0 invert" />
+            <Image src="/favicon.ico" alt="Logo" width={20} height={20}  />
           </div>
           <span className="font-heading font-bold text-xl text-slate-900 hidden sm:block tracking-tight">
             RideOwn
@@ -46,7 +52,7 @@ const Header = () => {
           </Link>
         </div>
 
-        {data?.user ? (
+        {mounted && data?.user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="outline-none ring-0 focus:ring-0">

@@ -1,37 +1,90 @@
 import connectDb from "@/lib/db";
 import User from "@/model/userModel";
+import Otp from "@/model/otpModel";
 import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { generateOtp, sendVerificationOtp } from "@/lib/otp";
+import { registerLimiter } from "@/lib/arjet";
+
+const registerSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password } = await request.json();
+    const body = await request.json();
+
+    const result = registerSchema.safeParse(body);
+    if (!result.success) {
+      const firstError = result.error.issues[0].message;
+      return NextResponse.json({ message: firstError }, { status: 400 });
+    }
+
+    const { name, email, password } = result.data;
+
+    const decision = await registerLimiter.protect(request);
+    if (decision.isDenied()) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     await connectDb();
-    let existUser = await User.findOne({ email });
+
+    const existUser = await User.findOne({ email });
     if (existUser) {
       return NextResponse.json(
-        { message: "email already exists" },
-        { status: 400 }
-      );
-    }
-    if (password.length < 6) {
-      return NextResponse.json(
-        { message: "password must be at least 6 characters" },
+        { message: "Email already exists" },
         { status: 400 }
       );
     }
 
-    let hashPassword = await bcrypt.hash(password, 10);
+    await Otp.deleteMany({ email });
 
-    let user = await User.create({
-      name,
+    const hashPassword = await bcrypt.hash(password, 10);
+    const otp = generateOtp();
+
+    await Otp.create({
       email,
-      password: hashPassword,
+      name,
+      hashedPassword: hashPassword,
+      otp,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      attempts: 0,
     });
-    return NextResponse.json(user, { status: 201 });
+
+    let emailSent = false;
+    try {
+      await sendVerificationOtp(email, name, otp);
+      emailSent = true;
+    } catch (emailError) {
+      console.error("Failed to send OTP email:", emailError);
+    }
+
+    const response: Record<string, unknown> = {
+      message: "Account created. Please verify your email.",
+      email,
+    };
+
+    if (!emailSent && process.env.NODE_ENV === "development") {
+      response.otp = otp;
+      response.devNote = "Email sending failed. Use this OTP for testing.";
+    }
+
+    return NextResponse.json(response, { status: 201 });
   } catch (error) {
     return NextResponse.json(
-      { message: `register error ${error}` },
+      { message: "Internal server error" },
       { status: 500 }
     );
   }

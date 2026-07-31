@@ -18,31 +18,33 @@ export default function CarPage({ params }: PageProps) {
   const [carData, setCarData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [carId, setCarId] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     async function loadCar() {
       try {
         const { id } = await params;
-        setCarId(id);
+        if (cancelled) return;
         setIsLoading(true);
         const res = await getCarById(id);
-
+        if (cancelled) return;
         if (!res.success) {
           setError("Car not found");
         } else {
           setCarData(res.data);
         }
       } catch (err) {
+        if (cancelled) return;
         console.error("Error loading car:", err);
         setError("Something went wrong");
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     }
 
     loadCar();
-  }, [params]);
+    return () => { cancelled = true; };
+  }, []);
 
   if (isLoading) {
     return (

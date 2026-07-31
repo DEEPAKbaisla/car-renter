@@ -15,17 +15,45 @@ import { Input } from "@/components/ui/input";
 import axios from "axios";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
-import { Loader2 } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { Loader2, Mail, ArrowLeft, Check, X, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
+
+function getPasswordStrength(password: string): { score: number; label: string; color: string } {
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[a-z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+
+  if (score <= 2) return { score, label: "Weak", color: "bg-red-500" };
+  if (score <= 3) return { score, label: "Fair", color: "bg-amber-500" };
+  if (score <= 4) return { score, label: "Strong", color: "bg-blue-500" };
+  return { score, label: "Very Strong", color: "bg-emerald-500" };
+}
 
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
+  const [step, setStep] = useState<"signup" | "otp">("signup");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [registeredEmail, setRegisteredEmail] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,14 +64,145 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
         email,
         password,
       });
-      router.push("/login");
-      console.log(result);
-    } catch (error) {
-      console.log(error);
+      setRegisteredEmail(result.data.email || email);
+      setStep("otp");
+      if (result.data.otp) {
+        toast.success(`OTP for testing: ${result.data.otp}`, { duration: 30000 });
+      } else {
+        toast.success("Account created! Please check your email for the verification code.");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to create account");
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsVerifying(true);
+    try {
+      await axios.post("/api/auth/verify-otp", {
+        email: registeredEmail,
+        otp,
+      });
+      toast.success("Email verified! Welcome to RideOwn.");
+      const result = await signIn("credentials", {
+        email: registeredEmail,
+        password: password,
+        redirect: false,
+      });
+      if (result?.ok) {
+        router.push("/");
+      } else {
+        router.push("/login");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Invalid OTP");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleResendOtp = useCallback(async () => {
+    setIsResending(true);
+    try {
+      const result = await axios.post("/api/auth/resend-otp", { email: registeredEmail });
+      setResendCooldown(60);
+      if (result.data.otp) {
+        toast.success(`OTP for testing: ${result.data.otp}`, { duration: 30000 });
+      } else {
+        toast.success("OTP resent! Check your email.");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to resend OTP");
+    } finally {
+      setIsResending(false);
+    }
+  }, [registeredEmail]);
+
+  const passwordStrength = getPasswordStrength(password);
+
+  const passwordChecks = [
+    { label: "8+ characters", met: password.length >= 8 },
+    { label: "Uppercase letter", met: /[A-Z]/.test(password) },
+    { label: "Lowercase letter", met: /[a-z]/.test(password) },
+    { label: "Number", met: /[0-9]/.test(password) },
+    { label: "Special character", met: /[^A-Za-z0-9]/.test(password) },
+  ];
+
+  if (step === "otp") {
+    return (
+      <div className="flex flex-col gap-6" {...props}>
+        <div className="text-center lg:text-left">
+          <button
+            onClick={() => setStep("signup")}
+            className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 mb-4 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </button>
+          <h1 className="text-2xl font-bold text-slate-900">Verify your email</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            We sent a 6-digit code to <span className="font-medium text-slate-900">{registeredEmail}</span>
+          </p>
+        </div>
+
+        <Card className="border-slate-200 shadow-sm">
+          <CardContent className="p-6">
+            <form onSubmit={handleVerifyOtp}>
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="otp">Verification Code</FieldLabel>
+                  <Input
+                    id="otp"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Enter 6-digit code"
+                    required
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    disabled={isVerifying}
+                    className="h-11 text-center text-lg tracking-[0.3em] font-mono"
+                    maxLength={6}
+                  />
+                </Field>
+
+                <Field>
+                  <Button type="submit" disabled={isVerifying || otp.length !== 6} className="w-full h-11 bg-slate-900 hover:bg-slate-800">
+                    {isVerifying ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Verifying...
+                      </>
+                    ) : (
+                      "Verify Email"
+                    )}
+                  </Button>
+                </Field>
+
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Didn&apos;t receive the code?{" "}
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={resendCooldown > 0 || isResending}
+                      className="font-medium text-slate-900 hover:underline underline-offset-4 disabled:opacity-50 disabled:cursor-not-allowed">
+                      {resendCooldown > 0
+                        ? `Resend in ${resendCooldown}s`
+                        : isResending
+                          ? "Sending..."
+                          : "Resend OTP"}
+                    </button>
+                  </p>
+                </div>
+              </FieldGroup>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6" {...props}>
@@ -94,6 +253,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                   placeholder="John Doe"
                   required
                   disabled={isLoading}
+                  value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="h-11"
                 />
@@ -107,6 +267,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                   placeholder="m@example.com"
                   required
                   disabled={isLoading}
+                  value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-11"
                 />
@@ -114,17 +275,53 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
 
               <Field>
                 <FieldLabel htmlFor="password">Password</FieldLabel>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  disabled={isLoading}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-11"
-                />
-                <FieldDescription>
-                  Must be at least 8 characters long.
-                </FieldDescription>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    disabled={isLoading}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-11 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    tabIndex={-1}>
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {password.length > 0 && (
+                  <div className="mt-2 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${passwordStrength.color}`}
+                          style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium text-slate-600 min-w-[70px] text-right">
+                        {passwordStrength.label}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                      {passwordChecks.map((check) => (
+                        <div key={check.label} className="flex items-center gap-1.5 text-xs">
+                          {check.met ? (
+                            <Check className="h-3 w-3 text-emerald-500" />
+                          ) : (
+                            <X className="h-3 w-3 text-slate-300" />
+                          )}
+                          <span className={check.met ? "text-emerald-600" : "text-slate-400"}>
+                            {check.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </Field>
 
               <Field>

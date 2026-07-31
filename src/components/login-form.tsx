@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 
 export function LoginForm({
@@ -29,11 +29,15 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+
+  const [error, setError] = useState("");
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
     try {
       const result = await signIn("credentials", {
         email,
@@ -43,6 +47,8 @@ export function LoginForm({
 
       if (result?.ok) {
         router.push("/");
+      } else {
+        setError(result?.error || "Invalid email or password");
       }
     } catch (error) {
       console.log(error);
@@ -108,21 +114,36 @@ export function LoginForm({
               <Field>
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <a
-                    href="#"
+                  <Link
+                    href="/forgot-password"
                     className="ml-auto text-sm text-slate-500 hover:text-slate-900 underline-offset-4 hover:underline transition-colors">
                     Forgot password?
-                  </a>
+                  </Link>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  disabled={isLoading}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-11"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    disabled={isLoading}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-11 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    tabIndex={-1}>
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </Field>
+
+              {error && (
+                <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
 
               <Field>
                 <Button type="submit" disabled={isLoading} className="w-full h-11 bg-slate-900 hover:bg-slate-800">

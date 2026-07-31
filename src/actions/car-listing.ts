@@ -1,21 +1,18 @@
-import authOptions from "@/lib/auth";
 import connectDb from "@/lib/db";
 import Car from "@/model/carModels";
-import User from "@/model/userModel";
-import { useSession } from "next-auth/react";
 
 export async function getCarFilters() {
   await connectDb();
 
-  const makes = await Car.distinct("make", { status: "AVAILABLE" });
-  const bodyTypes = await Car.distinct("bodyType", { status: "AVAILABLE" });
-  const fuelTypes = await Car.distinct("fuelType", { status: "AVAILABLE" });
+  const brands = await Car.distinct("brand", { status: "available" });
+  const bodyTypes = await Car.distinct("bodyType", { status: "available" });
+  const fuelTypes = await Car.distinct("fuelType", { status: "available" });
   const transmissions = await Car.distinct("transmission", {
-    status: "AVAILABLE",
+    status: "available",
   });
 
   const priceStats = await Car.aggregate([
-    { $match: { status: "AVAILABLE" } },
+    { $match: { status: "available" } },
     {
       $group: {
         _id: null,
@@ -28,7 +25,7 @@ export async function getCarFilters() {
   return {
     success: true,
     data: {
-      makes,
+      brands,
       bodyTypes,
       fuelTypes,
       transmissions,
@@ -39,6 +36,3 @@ export async function getCarFilters() {
     },
   };
 }
-
-
-

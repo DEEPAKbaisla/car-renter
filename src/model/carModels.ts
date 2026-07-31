@@ -2,18 +2,11 @@ import mongoose from "mongoose";
 interface carDocument {
   _id?: mongoose.Types.ObjectId;
   name: string;
-  type:
-    | "hatchback"
-    | "sedan"
-    | "suv"
-    | "convertible"
-    | "coupe"
-    | "wagon"
-    | "pickup";
+  type: "hatchback" | "sedan" | "suv" | "luxury";
   price: number;
   brand: string;
   model: string;
-  status: "available" | "booked" | "maintenance";
+  status: "available" | "unavailable" | "booked" | "maintenance";
   transmission: "manual" | "automatic" | "semi-automatic";
   fuelType: "petrol" | "diesel" | "electric" | "hybrid" | "cng";
   seats: number;
@@ -51,7 +44,7 @@ const carSchema = new mongoose.Schema<carDocument>(
     },
     transmission: {
       type: String,
-      enum: ["manual", "automatic"],
+      enum: ["manual", "automatic", "semi-automatic"],
       required: true,
     },
     fuelType: {
@@ -105,6 +98,8 @@ const carSchema = new mongoose.Schema<carDocument>(
   },
   { timestamps: true },
 );
+
+carSchema.index({ status: 1, brand: 1 });
 
 const Car = mongoose.models?.Car || mongoose.model("Car", carSchema);
 export default Car;

@@ -26,7 +26,7 @@ export async function getAdmin() {
   };
 }
 
-export async function getUsers(search = "") {
+export async function getUsers(search = "", page = 1, limit = 10) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -47,10 +47,16 @@ export async function getUsers(search = "") {
       ];
     }
 
-    const users = await User.find(filter)
-      .select("-password")
-      .sort({ createdAt: -1 })
-      .lean();
+    const skip = (Math.max(1, page) - 1) * limit;
+    const [users, total] = await Promise.all([
+      User.find(filter)
+        .select("-password")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      User.countDocuments(filter),
+    ]);
 
     const serializedUsers = users.map((user) => ({
       id: user._id?.toString(),
@@ -64,7 +70,13 @@ export async function getUsers(search = "") {
         : null,
     }));
 
-    return { success: true, data: serializedUsers };
+    return {
+      success: true,
+      data: serializedUsers,
+      total,
+      page,
+      pageCount: Math.ceil(total / limit),
+    };
   } catch (error) {
     console.error("Error fetching users:", error);
     return { success: false, error: "Failed to fetch users" };
@@ -88,24 +100,36 @@ export async function updateUserRole(userId: string, role: string) {
       return { success: false, error: "Invalid role" };
     }
 
-    const user = await User.findByIdAndUpdate(
+    const user = await User.findById(userId);
+    if (!user) {
+      return { success: false, error: "User not found" };
+    }
+
+    if (user.role === "admin" && role !== "admin") {
+      const adminCount = await User.countDocuments({ role: "admin" });
+      if (adminCount <= 1) {
+        return { success: false, error: "Cannot demote the last admin" };
+      }
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
       userId,
       { role },
       { new: true }
     ).select("-password");
 
-    if (!user) {
+    if (!updatedUser) {
       return { success: false, error: "User not found" };
     }
 
     return {
       success: true,
       user: {
-        id: user._id.toString(),
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        isBlocked: user.isBlocked ?? false,
+        id: updatedUser._id.toString(),
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        isBlocked: updatedUser.isBlocked ?? false,
       },
     };
   } catch (error) {
@@ -133,6 +157,13 @@ export async function toggleUserBlock(userId: string) {
 
     if (user._id.toString() === session.user.id) {
       return { success: false, error: "Cannot block yourself" };
+    }
+
+    if (user.role === "admin") {
+      const adminCount = await User.countDocuments({ role: "admin" });
+      if (adminCount <= 1) {
+        return { success: false, error: "Cannot block the last admin" };
+      }
     }
 
     user.isBlocked = !user.isBlocked;

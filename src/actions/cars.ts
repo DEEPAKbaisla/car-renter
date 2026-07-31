@@ -9,6 +9,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getServerSession } from "next-auth";
 import { revalidatePath } from "next/cache";
 import { v4 as uuidv4 } from "uuid";
+import { z } from "zod";
 
 async function fileToBase64(file: File) {
   const bytes = await file.arrayBuffer();
@@ -126,6 +127,31 @@ interface AddCarParams {
   images: ImageData | ImageData[];
 }
 
+const addCarSchema = z.object({
+  make: z.string().min(1, "Make is required"),
+  model: z.string().min(1, "Model is required"),
+  year: z.union([z.string(), z.number()]).refine((val) => {
+    const year = Number(val);
+    return !isNaN(year) && year >= 1900 && year <= new Date().getFullYear() + 1;
+  }, "Valid year required"),
+  price: z.union([z.string(), z.number()]).refine((val) => {
+    const price = Number(val);
+    return !isNaN(price) && price > 0;
+  }, "Valid price required"),
+  mileage: z.union([z.string(), z.number()]).refine((val) => {
+    const mileage = Number(val);
+    return !isNaN(mileage) && mileage >= 0;
+  }, "Valid mileage required"),
+  color: z.string().min(1, "Color is required"),
+  fuelType: z.string().min(1, "Fuel type is required"),
+  transmission: z.string().min(1, "Transmission is required"),
+  bodyType: z.string().min(1, "Body type is required"),
+  seats: z.union([z.string(), z.number()]).optional(),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  status: z.enum(["available", "unavailable"]).optional(),
+  featured: z.boolean().optional(),
+});
+
 export async function AddCar({ carData, images }: AddCarParams) {
   try {
     const session = await getServerSession(authOptions);
@@ -137,6 +163,12 @@ export async function AddCar({ carData, images }: AddCarParams) {
 
     if (user.role !== "admin") {
       throw new Error("Unauthorized: Admin only");
+    }
+
+    const carResult = addCarSchema.safeParse(carData);
+    if (!carResult.success) {
+      const firstError = carResult.error.issues[0].message;
+      throw new Error(firstError);
     }
 
     const carId = uuidv4();
@@ -233,11 +265,15 @@ export async function getCars(search = "") {
     const user = await User.findById(session.user.id);
     if (!user) throw new Error("User not found");
 
+    if (user.role !== "admin") {
+      throw new Error("Unauthorized: Only admins can access this");
+    }
+
     let filter: any = {};
 
     if (search) {
       filter.$or = [
-        { make: { $regex: search, $options: "i" } },
+        { brand: { $regex: search, $options: "i" } },
         { model: { $regex: search, $options: "i" } },
         { color: { $regex: search, $options: "i" } },
       ];
@@ -358,6 +394,17 @@ export const updateCarStatus = async (carId: string, status: string) => {
     const validStatuses = ["available", "unavailable", "booked", "maintenance"];
     if (!validStatuses.includes(normalizedStatus)) {
       return { success: false, error: "Invalid status value" };
+    }
+
+    const session = await getServerSession(authOptions);
+    if (!session) throw new Error("Unauthorized: No session found");
+
+    await connectDb();
+    const user = await User.findById(session.user.id);
+    if (!user) throw new Error("User not found");
+
+    if (user.role !== "admin") {
+      throw new Error("Unauthorized: Only admins can update car status");
     }
 
     const car = await Car.findByIdAndUpdate(

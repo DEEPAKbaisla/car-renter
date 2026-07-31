@@ -1,32 +1,39 @@
 import mongoose from "mongoose";
 
 export type BookingStatus =
-  | "pending"
+  | "pending_payment"
   | "confirmed"
   | "cancelled"
   | "completed";
 
-export type PaymentStatus =
-  | "pending"
-  | "paid"
-  | "failed"
-  | "refunded";
+export type PaymentPlan = "full" | "half";
 
 export interface BookingDocument {
   _id?: mongoose.Types.ObjectId;
 
-  user: mongoose.Types.ObjectId; // who booked
-  car: mongoose.Types.ObjectId;  // which car
+  user: mongoose.Types.ObjectId;
+  car: mongoose.Types.ObjectId;
 
   startDate: Date;
   endDate: Date;
 
   totalDays: number;
   pricePerDay: number;
-  totalPrice: number;
+  totalAmount: number;
 
-  bookingStatus: BookingStatus;
-  paymentStatus: PaymentStatus;
+  paymentPlan: PaymentPlan;
+  amountPaid: number;
+  amountDue: number;
+
+  status: BookingStatus;
+
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  razorpaySignature?: string;
+
+  remainingRazorpayOrderId?: string;
+  remainingRazorpayPaymentId?: string;
+  remainingRazorpaySignature?: string;
 
   pickupLocation?: string;
   dropLocation?: string;
@@ -69,21 +76,55 @@ const bookingSchema = new mongoose.Schema<BookingDocument>(
       required: true,
     },
 
-    totalPrice: {
+    totalAmount: {
       type: Number,
       required: true,
     },
 
-    bookingStatus: {
+    paymentPlan: {
       type: String,
-      enum: ["pending", "confirmed", "cancelled", "completed"],
-      default: "pending",
+      enum: ["full", "half"],
+      required: true,
     },
 
-    paymentStatus: {
+    amountPaid: {
+      type: Number,
+      default: 0,
+    },
+
+    amountDue: {
+      type: Number,
+      default: 0,
+    },
+
+    status: {
       type: String,
-      enum: ["pending", "paid", "failed", "refunded"],
-      default: "pending",
+      enum: ["pending_payment", "confirmed", "cancelled", "completed"],
+      default: "pending_payment",
+    },
+
+    razorpayOrderId: {
+      type: String,
+    },
+
+    razorpayPaymentId: {
+      type: String,
+    },
+
+    razorpaySignature: {
+      type: String,
+    },
+
+    remainingRazorpayOrderId: {
+      type: String,
+    },
+
+    remainingRazorpayPaymentId: {
+      type: String,
+    },
+
+    remainingRazorpaySignature: {
+      type: String,
     },
 
     pickupLocation: {
@@ -96,6 +137,10 @@ const bookingSchema = new mongoose.Schema<BookingDocument>(
   },
   { timestamps: true }
 );
+
+bookingSchema.index({ status: 1, user: 1, car: 1 });
+bookingSchema.index({ user: 1, createdAt: -1 });
+bookingSchema.index({ car: 1, startDate: 1, endDate: 1 });
 
 const Booking =
   mongoose.models.Booking ||

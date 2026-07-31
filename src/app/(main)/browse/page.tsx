@@ -117,7 +117,7 @@ const BrowseCars = () => {
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-xl font-bold text-slate-900">
-                            ${car.price}
+                            ₹{car.price}
                           </p>
                           <p className="text-xs text-muted-foreground">/day</p>
                         </div>
