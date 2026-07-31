@@ -1,24 +1,24 @@
-import CarList from "./_components/car-list";
+import UserManagement from "./_components/user-management";
 
 export const metadata = {
-  title: "Cars | RideOwn",
-  description: "Manage cars for RideOwn car marketplace",
+  title: "Settings | RideOwn",
+  description: "Manage users and settings for RideOwn",
 };
 
-const CarPage = () => {
+const SettingsPage = () => {
   return (
     <div className="p-6 md:p-8">
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
-          Cars Management
+          Settings
         </h1>
         <p className="text-muted-foreground mt-1">
-          Manage your car inventory and listings.
+          Manage users and platform settings.
         </p>
       </div>
-      <CarList />
+      <UserManagement />
     </div>
   );
 };
 
-export default CarPage;
+export default SettingsPage;

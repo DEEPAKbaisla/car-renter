@@ -7,7 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
-  
   CardContent,
   CardDescription,
   CardHeader,
@@ -27,7 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { useDropzone, FileRejection } from "react-dropzone";
-import { Camera,  Loader2, Upload, X } from "lucide-react";
+import { Camera, Loader2, Upload, X } from "lucide-react";
 import { AddCar, processCarImageWithAI } from "@/actions/cars";
 import useFetch from "@/hooks/use-fetch";
 import { useRouter } from "next/navigation";
@@ -112,14 +111,11 @@ const AddCarForm = () => {
     error: addCarError,
   } = useFetch(AddCar);
 
-  // Handle API call completion
   useEffect(() => {
     if (!addCarLoading && isSubmitting) {
       if (addCarError) {
-        // Error is already handled by useFetch hook with toast
         setIsSubmitting(false);
       } else {
-        // Success - no error means the API call succeeded
         toast.success("Car added successfully!");
         setImagePreview([]);
         setImageFiles([]);
@@ -141,14 +137,12 @@ const AddCarForm = () => {
     }
   }, [addCarLoading, addCarError, isSubmitting, setValue]);
 
-  // Helper function to convert File to base64
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => {
         const result = reader.result as string;
-        // Remove data URL prefix (e.g., "data:image/jpeg;base64,")
         const base64 = result.split(",")[1];
         resolve(base64);
       };
@@ -182,7 +176,6 @@ const AddCarForm = () => {
         featured: data.featured,
       };
 
-      // Convert File objects to base64 strings with metadata
       const imageData = await Promise.all(
         imageFiles.map(async (file) => ({
           name: file.name,
@@ -192,7 +185,6 @@ const AddCarForm = () => {
         }))
       );
 
-      // Make API call using the useFetch hook
       await addCarFn({
         carData,
         images: imageData,
@@ -206,7 +198,6 @@ const AddCarForm = () => {
 
   const onMultiImagesDrop = useCallback(
     (acceptedFiles: File[], fileRejections: FileRejection[]) => {
-      // Handle file rejections
       if (fileRejections.length > 0) {
         fileRejections.forEach(({ file, errors }) => {
           errors.forEach((error) => {
@@ -342,10 +333,10 @@ const AddCarForm = () => {
       toast.error(processImageError.message || "Failed to upload car");
     }
   }, [processImageError]);
+
   useEffect(() => {
     if (processImageResult?.success) {
       const carDetails = processImageResult.data;
-      // update form with ai
       setValue("make", carDetails.make);
       setValue("model", carDetails.model);
       setValue("year", carDetails.year.toString());
@@ -357,30 +348,29 @@ const AddCarForm = () => {
       setValue("transmission", carDetails.transmission);
       setValue("description", carDetails.description);
 
-     if (uploadAiImage) {
-  const reader = new FileReader();
+      if (uploadAiImage) {
+        const reader = new FileReader();
 
-  reader.onload = () => {
-    if (reader.result) {
-      setImagePreview((prev) => [...prev, reader.result as string]);
-      setImageFiles((prev) => [...prev, uploadAiImage]);
-      setIsUploading(false);
-    }
-  };
+        reader.onload = () => {
+          if (reader.result) {
+            setImagePreview((prev) => [...prev, reader.result as string]);
+            setImageFiles((prev) => [...prev, uploadAiImage]);
+            setIsUploading(false);
+          }
+        };
 
-  reader.readAsDataURL(uploadAiImage);
+        reader.readAsDataURL(uploadAiImage);
 
-  toast.success("Successfully extracted car details ", {
-    description: `Detected ${carDetails.year} ${carDetails.make} ${
-      carDetails.model
-    } with ${Math.round(carDetails.confidence * 100)}% confidence`,
-  });
+        toast.success("Successfully extracted car details", {
+          description: `Detected ${carDetails.year} ${carDetails.make} ${
+            carDetails.model
+          } with ${Math.round(carDetails.confidence * 100)}% confidence`,
+        });
 
-  setActiveTab("manual");
-}
+        setActiveTab("manual");
+      }
     }
   }, [processImageResult, uploadAiImage]);
-
 
   const removeImage = (index: number) => {
     setImagePreview((prev) => prev.filter((_, i) => i !== index));
@@ -399,6 +389,7 @@ const AddCarForm = () => {
     },
     multiple: true,
   });
+
   useEffect(() => {
     if (addCarResult?.success) {
       toast.success("Car added successfully");
@@ -412,167 +403,146 @@ const AddCarForm = () => {
         defaultValue="manual"
         className="mt-6 w-full"
         value={activeTab}
-        onValueChange={setActiveTab}
-        >
-        <TabsList className="!grid w-full grid-cols-2 min-w-0">
+        onValueChange={setActiveTab}>
+        <TabsList className="!grid w-full grid-cols-2 min-w-0 bg-slate-100 p-1 rounded-xl">
           <TabsTrigger
             value="manual"
-            className="w-full text-xs sm:text-sm min-w-0 truncate">
+            className="w-full text-xs sm:text-sm min-w-0 truncate rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
             Manual Entry
           </TabsTrigger>
           <TabsTrigger
             value="ai"
-            className="w-full text-xs sm:text-sm min-w-0 truncate">
+            className="w-full text-xs sm:text-sm min-w-0 truncate rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
             AI Upload
           </TabsTrigger>
         </TabsList>
-       
 
         <TabsContent value="manual" className="mt-6 w-full overflow-visible">
-          <Card className="w-full">
-            <CardHeader>
-              <CardTitle>Car Details</CardTitle>
+          <Card className="w-full border-slate-200 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-slate-900">Car Details</CardTitle>
               <CardDescription>
                 Enter the details of the car you want to add
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {/* make */}
                   <div className="space-y-2">
-                    <Label htmlFor="make">Make</Label>
+                    <Label htmlFor="make" className="text-slate-700 font-medium">Make</Label>
                     <Input
                       id="make"
                       {...register("make")}
                       placeholder="e.g Toyota"
-                      className={errors.make ? "border-red-500" : ""}
+                      className={`h-10 border-slate-200 ${errors.make ? "border-red-400 focus-visible:ring-red-400" : ""}`}
                     />
                     {errors.make && (
-                      <p className="text-xs text-red-500">
-                        {errors.make.message}
-                      </p>
+                      <p className="text-xs text-red-500">{errors.make.message}</p>
                     )}
                   </div>
 
                   {/* model */}
                   <div className="space-y-2">
-                    <Label htmlFor="model">Model</Label>
+                    <Label htmlFor="model" className="text-slate-700 font-medium">Model</Label>
                     <Input
                       id="model"
                       {...register("model")}
                       placeholder="e.g. Camry"
-                      className={errors.model ? "border-red-500" : ""}
+                      className={`h-10 border-slate-200 ${errors.model ? "border-red-400 focus-visible:ring-red-400" : ""}`}
                     />
                     {errors.model && (
-                      <p className="text-xs text-red-500">
-                        {errors.model.message}
-                      </p>
+                      <p className="text-xs text-red-500">{errors.model.message}</p>
                     )}
                   </div>
 
                   {/* year */}
                   <div className="space-y-2">
-                    <Label htmlFor="year">Year</Label>
+                    <Label htmlFor="year" className="text-slate-700 font-medium">Year</Label>
                     <Input
                       id="year"
                       {...register("year")}
                       placeholder="e.g. 2022"
-                      className={errors.year ? "border-red-500" : ""}
+                      className={`h-10 border-slate-200 ${errors.year ? "border-red-400 focus-visible:ring-red-400" : ""}`}
                     />
                     {errors.year && (
-                      <p className="text-xs text-red-500">
-                        {errors.year.message}
-                      </p>
+                      <p className="text-xs text-red-500">{errors.year.message}</p>
                     )}
                   </div>
 
                   {/* Price */}
                   <div className="space-y-2">
-                    <Label htmlFor="price">Price ($)</Label>
+                    <Label htmlFor="price" className="text-slate-700 font-medium">Price (₹)</Label>
                     <Input
                       id="price"
                       {...register("price")}
-                      placeholder="e.g. 25000"
-                      className={errors.price ? "border-red-500" : ""}
+                      placeholder="e.g. 2500"
+                      className={`h-10 border-slate-200 ${errors.price ? "border-red-400 focus-visible:ring-red-400" : ""}`}
                     />
                     {errors.price && (
-                      <p className="text-xs text-red-500">
-                        {errors.price.message}
-                      </p>
+                      <p className="text-xs text-red-500">{errors.price.message}</p>
                     )}
                   </div>
 
                   {/* Mileage */}
                   <div className="space-y-2">
-                    <Label htmlFor="mileage">Mileage</Label>
+                    <Label htmlFor="mileage" className="text-slate-700 font-medium">Mileage</Label>
                     <Input
                       id="mileage"
                       {...register("mileage")}
                       placeholder="e.g. 15000"
-                      className={errors.mileage ? "border-red-500" : ""}
+                      className={`h-10 border-slate-200 ${errors.mileage ? "border-red-400 focus-visible:ring-red-400" : ""}`}
                     />
                     {errors.mileage && (
-                      <p className="text-xs text-red-500">
-                        {errors.mileage.message}
-                      </p>
+                      <p className="text-xs text-red-500">{errors.mileage.message}</p>
                     )}
                   </div>
 
                   {/* Color */}
                   <div className="space-y-2">
-                    <Label htmlFor="color">Color</Label>
+                    <Label htmlFor="color" className="text-slate-700 font-medium">Color</Label>
                     <Input
                       id="color"
                       {...register("color")}
                       placeholder="e.g. Blue"
-                      className={errors.color ? "border-red-500" : ""}
+                      className={`h-10 border-slate-200 ${errors.color ? "border-red-400 focus-visible:ring-red-400" : ""}`}
                     />
                     {errors.color && (
-                      <p className="text-xs text-red-500">
-                        {errors.color.message}
-                      </p>
+                      <p className="text-xs text-red-500">{errors.color.message}</p>
                     )}
                   </div>
 
-                  {/* Fuel type  */}
+                  {/* Fuel type */}
                   <div className="space-y-2">
-                    <Label htmlFor="color">Fuel type</Label>
-                    {/* <Select
-                      onValueChange={(value) => setValue("fuelType", value)}
-                      defaultValue={getValues("fuelType")}> */}
+                    <Label className="text-slate-700 font-medium">Fuel Type</Label>
                     <Select
                       value={watch("fuelType")}
                       onValueChange={(value) => setValue("fuelType", value)}>
                       <SelectTrigger
-                        className={errors.fuelType ? "border-red-500" : ""}>
+                        className={`h-10 border-slate-200 ${errors.fuelType ? "border-red-400" : ""}`}>
                         <SelectValue placeholder="Select fuel type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {fuelTypes.map((type) => {
-                          return (
-                            <SelectItem key={type} value={type}>
-                              {type}
-                            </SelectItem>
-                          );
-                        })}
+                        {fuelTypes.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     {errors.fuelType && (
-                      <p className="text-xs text-red-500">
-                        {errors.fuelType.message}
-                      </p>
+                      <p className="text-xs text-red-500">{errors.fuelType.message}</p>
                     )}
                   </div>
 
                   {/* Transmission */}
                   <div className="space-y-2">
-                    <Label htmlFor="transmission">Transmission</Label>
+                    <Label className="text-slate-700 font-medium">Transmission</Label>
                     <Select
                       onValueChange={(value) => setValue("transmission", value)}
                       defaultValue={getValues("transmission")}>
                       <SelectTrigger
-                        className={errors.transmission ? "border-red-500" : ""}>
+                        className={`h-10 border-slate-200 ${errors.transmission ? "border-red-400" : ""}`}>
                         <SelectValue placeholder="Select transmission" />
                       </SelectTrigger>
                       <SelectContent>
@@ -584,20 +554,18 @@ const AddCarForm = () => {
                       </SelectContent>
                     </Select>
                     {errors.transmission && (
-                      <p className="text-xs text-red-500">
-                        {errors.transmission.message}
-                      </p>
+                      <p className="text-xs text-red-500">{errors.transmission.message}</p>
                     )}
                   </div>
 
                   {/* Body Type */}
                   <div className="space-y-2">
-                    <Label htmlFor="bodyType">Body Type</Label>
+                    <Label className="text-slate-700 font-medium">Body Type</Label>
                     <Select
                       onValueChange={(value) => setValue("bodyType", value)}
                       defaultValue={getValues("bodyType")}>
                       <SelectTrigger
-                        className={errors.bodyType ? "border-red-500" : ""}>
+                        className={`h-10 border-slate-200 ${errors.bodyType ? "border-red-400" : ""}`}>
                         <SelectValue placeholder="Select body type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -609,34 +577,33 @@ const AddCarForm = () => {
                       </SelectContent>
                     </Select>
                     {errors.bodyType && (
-                      <p className="text-xs text-red-500">
-                        {errors.bodyType.message}
-                      </p>
+                      <p className="text-xs text-red-500">{errors.bodyType.message}</p>
                     )}
                   </div>
 
                   {/* Seats */}
                   <div className="space-y-2">
-                    <Label htmlFor="seats">
+                    <Label htmlFor="seats" className="text-slate-700 font-medium">
                       Number of Seats{" "}
-                      <span className="text-sm text-gray-500">(Optional)</span>
+                      <span className="text-sm text-slate-400 font-normal">(Optional)</span>
                     </Label>
                     <Input
                       id="seats"
                       {...register("seats")}
                       placeholder="e.g. 5"
+                      className="h-10 border-slate-200"
                     />
                   </div>
 
                   {/* Status */}
                   <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
+                    <Label className="text-slate-700 font-medium">Status</Label>
                     <Select
                       onValueChange={(value) =>
                         setValue("status", value as "AVAILABLE" | "UNAVAILABLE")
                       }
                       defaultValue={getValues("status")}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-10 border-slate-200">
                         <SelectValue placeholder="Select status" />
                       </SelectTrigger>
                       <SelectContent>
@@ -652,24 +619,22 @@ const AddCarForm = () => {
 
                 {/* Description */}
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description" className="text-slate-700 font-medium">Description</Label>
                   <Textarea
                     id="description"
                     {...register("description")}
                     placeholder="Enter detailed description of the car..."
-                    className={`min-h-32 ${
-                      errors.description ? "border-red-500" : ""
+                    className={`min-h-28 border-slate-200 ${
+                      errors.description ? "border-red-400 focus-visible:ring-red-400" : ""
                     }`}
                   />
                   {errors.description && (
-                    <p className="text-xs text-red-500">
-                      {errors.description.message}
-                    </p>
+                    <p className="text-xs text-red-500">{errors.description.message}</p>
                   )}
                 </div>
 
                 {/* Featured */}
-                <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
+                <div className="flex items-start space-x-3 space-y-0 rounded-xl border border-slate-200 p-4 bg-slate-50/50">
                   <Checkbox
                     id="featured"
                     checked={watch("featured")}
@@ -678,43 +643,46 @@ const AddCarForm = () => {
                     }}
                   />
                   <div className="space-y-1 leading-none">
-                    <Label htmlFor="featured">Feature this car</Label>
-                    <p className="text-sm text-gray-500">
+                    <Label htmlFor="featured" className="text-slate-700 font-medium">Feature this car</Label>
+                    <p className="text-sm text-muted-foreground">
                       Featured cars appear on the homepage
                     </p>
                   </div>
                 </div>
 
+                {/* Image Upload */}
                 <div>
                   <Label
                     htmlFor="images"
-                    className={imageError ? "text-red-500" : ""}>
+                    className={`text-slate-700 font-medium ${imageError ? "text-red-500" : ""}`}>
                     Images
-                    {imageError && <span className="text-red-500">*</span>}
+                    {imageError && <span className="text-red-500 ml-1">*</span>}
                   </Label>
                   <div
                     {...getMultiImageRootProps()}
-                    className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition mt-2 ${
-                      imageError ? "border-red-500 " : "border-gray-300"
-                    } ${isDragActive ? "border-blue-500 bg-blue-50" : ""}`}>
+                    className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer hover:bg-slate-50 transition-all mt-2 ${
+                      imageError ? "border-red-400 bg-red-50/50" : "border-slate-200 hover:border-slate-300"
+                    } ${isDragActive ? "border-blue-400 bg-blue-50/50" : ""}`}>
                     <input {...getMultiImageInputProps()} />
                     <div className="flex flex-col items-center">
-                      <Upload className="h-12 w-12 text-gray-400 mb-3" />
+                      <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-3">
+                        <Upload className="h-6 w-6 text-slate-400" />
+                      </div>
                       {isUploading ? (
-                        <p className="text-gray-500 mb-1">
+                        <p className="text-muted-foreground mb-1 text-sm">
                           Processing images...
                         </p>
                       ) : (
                         <>
-                          <p className="text-gray-500 mb-1">
+                          <p className="text-muted-foreground mb-1 text-sm">
                             Drag & drop car images or click to select
                           </p>
                           {isDragReject && (
-                            <p className="text-red-500 mb-2">
+                            <p className="text-red-500 mb-2 text-sm">
                               Invalid image type
                             </p>
                           )}
-                          <p className="text-gray-400 text-sm">
+                          <p className="text-slate-400 text-xs">
                             Supports: JPG, PNG, WEBP (max 5MB per image)
                           </p>
                         </>
@@ -722,16 +690,15 @@ const AddCarForm = () => {
                     </div>
                   </div>
                   {imageError && (
-                    <p className="text-xs text-red-500 mt-1">{imageError}</p>
+                    <p className="text-xs text-red-500 mt-1.5">{imageError}</p>
                   )}
 
-                  {/* Image Preview Grid */}
                   {imagePreview.length > 0 && (
-                    <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="mt-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                       {imagePreview.map((preview, index) => (
                         <div
                           key={index}
-                          className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200">
+                          className="relative group aspect-square rounded-xl overflow-hidden border border-slate-200">
                           <img
                             src={preview}
                             alt={`Preview ${index + 1}`}
@@ -740,8 +707,8 @@ const AddCarForm = () => {
                           <button
                             type="button"
                             onClick={() => removeImage(index)}
-                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600">
-                            <X className="h-4 w-4" />
+                            className="absolute top-2 right-2 bg-slate-900/80 text-white rounded-lg p-1 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm hover:bg-red-600">
+                            <X className="h-3.5 w-3.5" />
                           </button>
                         </div>
                       ))}
@@ -750,37 +717,43 @@ const AddCarForm = () => {
                 </div>
 
                 {/* Submit Button */}
-                <div className="flex justify-end gap-4 pt-4 mb-5">
+                <div className="flex justify-end gap-3 pt-4 pb-4">
                   <Button
                     type="submit"
-                    disabled={isSubmitting || isUploading || addCarLoading}>
-                    {isSubmitting || addCarLoading
-                      ? "Adding Car..."
-                      : "Add Car"}
+                    disabled={isSubmitting || isUploading || addCarLoading}
+                    className="bg-slate-900 hover:bg-slate-800 shadow-sm px-6">
+                    {isSubmitting || addCarLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Adding Car...
+                      </>
+                    ) : (
+                      "Add Car"
+                    )}
                   </Button>
                 </div>
               </form>
             </CardContent>
           </Card>
         </TabsContent>
+
         <TabsContent value="ai" className="mt-6 w-full overflow-visible">
-          <Card>
-            <CardHeader>
-              <CardTitle>AI-Powered Car Details Extraction</CardTitle>
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-slate-900">AI-Powered Car Details Extraction</CardTitle>
               <CardDescription>
-                Uplaod an image of a car and let AI extract its details{" "}
+                Upload an image of a car and let AI extract its details
               </CardDescription>
-              {/* <CardAction>Card Action</CardAction> */}
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:border-slate-300 transition-colors">
                   {aiImage ? (
                     <div className="flex flex-col items-center">
                       <img
                         src={aiImage}
                         alt="AI Preview"
-                        className="max-h-56 max-w-full object-contain mb-4"
+                        className="max-h-56 max-w-full object-contain mb-4 rounded-lg"
                       />
                       <div className="flex gap-2">
                         <Button
@@ -795,7 +768,8 @@ const AddCarForm = () => {
                         <Button
                           size="sm"
                           onClick={processWithAI}
-                          disabled={processImageLoading}>
+                          disabled={processImageLoading}
+                          className="bg-slate-900 hover:bg-slate-800">
                           {processImageLoading ? (
                             <>
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -813,37 +787,39 @@ const AddCarForm = () => {
                   ) : (
                     <div
                       {...getAiRootProps()}
-                      className="cursor-pointer hover:bg-gray-50 transition">
+                      className="cursor-pointer hover:bg-slate-50 transition-colors rounded-lg p-4">
                       <input {...getAiInputProps()} />
                       <div className="flex flex-col items-center justify-center">
-                        <Camera className="h-12 w-12 text-gray-400 mb-3" />
-                        <span className="text-sm text-gray-600">
+                        <div className="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center mb-3">
+                          <Camera className="h-7 w-7 text-slate-400" />
+                        </div>
+                        <span className="text-sm font-medium text-slate-700">
                           Drag & drop or click to upload a car image
                         </span>
-                        <span className="text-xs text-gray-500 mt-1">
-                          (JPG, PNG, WebP, max 5MB)
+                        <span className="text-xs text-muted-foreground mt-1">
+                          JPG, PNG, WebP, max 5MB
                         </span>
                       </div>
                     </div>
                   )}
                 </div>
 
-                <div className="bg-gray-50 p-4 rounded-md">
-                  <h3 className="font-medium mb-2">How it works</h3>
-                  <ol className="space-y-2 text-sm text-gray-600 list-decimal pl-4">
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  <h3 className="font-medium text-slate-900 mb-2.5 text-sm">How it works</h3>
+                  <ol className="space-y-2 text-sm text-muted-foreground list-decimal pl-4">
                     <li>Upload a clear image of the car</li>
-                    <li>Click "Extract Details" to analyze with Gemini AI</li>
+                    <li>Click &quot;Extract Details&quot; to analyze with Gemini AI</li>
                     <li>Review the extracted information</li>
                     <li>Fill in any missing details manually</li>
                     <li>Add the car to your inventory</li>
                   </ol>
                 </div>
 
-                <div className="bg-amber-50 p-4 rounded-md">
-                  <h3 className="font-medium text-amber-800 mb-1">
+                <div className="bg-amber-50 p-4 rounded-xl border border-amber-100">
+                  <h3 className="font-medium text-amber-800 mb-1.5 text-sm">
                     Tips for best results
                   </h3>
-                  <ul className="space-y-1 text-sm text-amber-700">
+                  <ul className="space-y-1.5 text-sm text-amber-700">
                     <li>• Use clear, well-lit images</li>
                     <li>• Try to capture the entire vehicle</li>
                     <li>• For difficult models, use multiple views</li>

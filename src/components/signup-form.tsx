@@ -3,15 +3,13 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
+  FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import axios from "axios";
@@ -19,6 +17,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { Loader2 } from "lucide-react";
+import Link from "next/link";
 
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
   const [name, setName] = useState("");
@@ -32,7 +31,6 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
     e.preventDefault();
     setIsLoading(true);
     try {
-      console.log({ name, email, password });
       const result = await axios.post("/api/auth/register", {
         name,
         email,
@@ -48,55 +46,89 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
   };
 
   return (
-    <Card {...props}>
-      <CardHeader>
-        <CardTitle>Create an account</CardTitle>
-        <CardDescription>
-          Enter your information below to create your account
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleRegister}>
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="name">Full Name</FieldLabel>
-              <Input
-                id="name"
-                type="text"
-                placeholder="John Doe"
-                required
-                disabled={isLoading}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="email">Email</FieldLabel>
-              <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
-                required
-                disabled={isLoading}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="password">Password</FieldLabel>
-              <Input
-                id="password"
-                type="password"
-                required
-                disabled={isLoading}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <FieldDescription>
-                Must be at least 8 characters long.
-              </FieldDescription>
-            </Field>
+    <div className="flex flex-col gap-6" {...props}>
+      <div className="text-center lg:text-left">
+        <h1 className="text-2xl font-bold text-slate-900">Create an account</h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          Enter your information below to get started
+        </p>
+      </div>
 
+      <Card className="border-slate-200 shadow-sm">
+        <CardContent className="p-6">
+          <form onSubmit={handleRegister}>
             <FieldGroup>
               <Field>
-                <Button type="submit" disabled={isLoading}>
+                <Button
+                  variant="outline"
+                  type="button"
+                  disabled={isLoading || isGoogleLoading}
+                  className="w-full h-11 border-slate-200 hover:bg-slate-50"
+                  onClick={async () => {
+                    setIsGoogleLoading(true);
+                    await signIn("google", { callbackUrl: "/" });
+                  }}>
+                  {isGoogleLoading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="mr-2 h-4 w-4">
+                      <path
+                        d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  )}
+                  Continue with Google
+                </Button>
+              </Field>
+
+              <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
+                or sign up with email
+              </FieldSeparator>
+
+              <Field>
+                <FieldLabel htmlFor="name">Full Name</FieldLabel>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  required
+                  disabled={isLoading}
+                  onChange={(e) => setName(e.target.value)}
+                  className="h-11"
+                />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                  disabled={isLoading}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="h-11"
+                />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="password">Password</FieldLabel>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  disabled={isLoading}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-11"
+                />
+                <FieldDescription>
+                  Must be at least 8 characters long.
+                </FieldDescription>
+              </Field>
+
+              <Field>
+                <Button type="submit" disabled={isLoading} className="w-full h-11 bg-slate-900 hover:bg-slate-800">
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -106,29 +138,25 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                     "Create Account"
                   )}
                 </Button>
-                <Button
-                  variant="outline"
-                  type="button"
-                  disabled={isLoading || isGoogleLoading}
-                  onClick={async () => {
-                    setIsGoogleLoading(true);
-                    await signIn("google", { callbackUrl: "/" });
-                  }}>
-                  {isGoogleLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
-                  Sign up with Google
-                </Button>
-                <FieldDescription
-                  className="px-6 text-center"
-                  onClick={() => router.push("/login")}>
-                  Already have an account? <a>Sign in</a>
-                </FieldDescription>
               </Field>
             </FieldGroup>
-          </FieldGroup>
-        </form>
-      </CardContent>
-    </Card>
+          </form>
+        </CardContent>
+      </Card>
+
+      <p className="text-center text-sm text-muted-foreground">
+        Already have an account?{" "}
+        <Link href="/login" className="font-medium text-slate-900 hover:underline underline-offset-4">
+          Sign in
+        </Link>
+      </p>
+
+      <FieldDescription className="px-6 text-center text-xs text-slate-400">
+        By continuing, you agree to our{" "}
+        <a href="#" className="underline underline-offset-4 hover:text-slate-600">Terms of Service</a>{" "}
+        and{" "}
+        <a href="#" className="underline underline-offset-4 hover:text-slate-600">Privacy Policy</a>.
+      </FieldDescription>
+    </div>
   );
 }

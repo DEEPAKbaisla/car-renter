@@ -2,10 +2,9 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Fuel, Gauge, Users, Palette, Calendar, Route } from "lucide-react";
 
 interface CarProps {
   car?: {
@@ -42,11 +41,10 @@ export default function CarDetails({ car }: CarProps) {
     car.image && car.image.length > 0 ? car.image : ["/placeholder.jpg"];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-      {/* ================= IMAGE GALLERY ================= */}
-      <div className="space-y-4">
-        {/* Main Image */}
-        <div className="relative w-full h-[300px] sm:h-[400px] lg:h-[450px] rounded-xl overflow-hidden border">
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-10">
+      {/* IMAGE GALLERY - takes 3 cols */}
+      <div className="lg:col-span-3 space-y-4">
+        <div className="relative w-full aspect-[16/10] rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
           <Image
             src={images[selectedImage]}
             alt={car.name}
@@ -56,102 +54,110 @@ export default function CarDetails({ car }: CarProps) {
           />
         </div>
 
-        {/* Thumbnails */}
-        <div className="flex gap-3 overflow-x-auto pb-2">
-          {images.map((img, index) => (
-            <div
-              key={index}
-              onClick={() => setSelectedImage(index)}
-              className={`relative min-w-[80px] h-[70px] rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${
-                selectedImage === index
-                  ? "border-primary"
-                  : "border-transparent opacity-70 hover:opacity-100"
-              }`}>
-              <Image
-                src={img}
-                alt={`car-${index}`}
-                fill
-                className="object-cover"
-              />
-            </div>
-          ))}
-        </div>
+        {images.length > 1 && (
+          <div className="flex gap-2.5 overflow-x-auto pb-2">
+            {images.map((img, index) => (
+              <div
+                key={index}
+                onClick={() => setSelectedImage(index)}
+                className={`relative min-w-[80px] h-[64px] rounded-xl overflow-hidden cursor-pointer border-2 transition-all duration-200 ${
+                  selectedImage === index
+                    ? "border-slate-900 shadow-md"
+                    : "border-slate-200 opacity-60 hover:opacity-100 hover:border-slate-400"
+                }`}>
+                <Image
+                  src={img}
+                  alt={`car-${index}`}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* ================= DETAILS SECTION ================= */}
-      <Card className="shadow-lg rounded-2xl">
-        <CardContent className="p-6 space-y-6">
+      {/* DETAILS SECTION - takes 2 cols */}
+      <div className="lg:col-span-2">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sticky top-24">
           {/* Header */}
-          <div className="flex justify-between items-start">
+          <div className="flex justify-between items-start gap-3">
             <div>
-              <h1 className="text-2xl font-bold">
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
                 {car.brand} {car.model}
               </h1>
-              <p className="text-muted-foreground text-sm">{car.year}</p>
+              <p className="text-muted-foreground text-sm mt-0.5">{car.year}</p>
             </div>
-
             <Badge
-              variant={car.status === "available" ? "success" : "destructive"}
-              className="capitalize">
+              variant={car.status === "available" ? "default" : "destructive"}
+              className={`capitalize text-xs px-2.5 py-1 ${
+                car.status === "available"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                  : ""
+              }`}>
               {car.status}
             </Badge>
           </div>
 
-          <Separator />
-
-          {/* Price */}
-          <h2 className="text-3xl font-bold text-primary">
-            ₹{car.price}
-            <span className="text-sm font-normal text-muted-foreground">
-              {" "}
-              / day
-            </span>
-          </h2>
-
-          <Separator />
-
-          {/* Specs */}
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <Spec label="Fuel Type" value={car.fuelType} />
-            <Spec label="Transmission" value={car.transmission} />
-            <Spec label="Seats" value={car.seats.toString()} />
-            <Spec label="Mileage" value={`${car.mileage} km/l`} />
-            <Spec label="Color" value={car.color} />
-            <Spec label="Body Type" value={car.bodyType} />
-            <Spec label="Trips Completed" value={car.trips.toString()} />
+          <div className="mt-5 p-4 bg-slate-50 rounded-xl">
+            <p className="text-3xl font-bold text-slate-900">
+              ₹{car.price}
+              <span className="text-sm font-normal text-muted-foreground ml-1">
+                / day
+              </span>
+            </p>
           </div>
 
-          <Separator />
+          {/* Specs Grid */}
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <Spec icon={Fuel} label="Fuel Type" value={car.fuelType} />
+            <Spec icon={Gauge} label="Transmission" value={car.transmission} />
+            <Spec icon={Users} label="Seats" value={`${car.seats} seats`} />
+            <Spec icon={Gauge} label="Mileage" value={`${car.mileage} km/l`} />
+            <Spec icon={Palette} label="Color" value={car.color} />
+            <Spec icon={Calendar} label="Body Type" value={car.bodyType} />
+          </div>
+
+          {/* Trips */}
+          <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+            <Route className="h-4 w-4" />
+            <span>{car.trips} trips completed</span>
+          </div>
 
           {/* Description */}
-          <div>
-            <h3 className="font-semibold mb-2">Description</h3>
+          <div className="mt-6 pt-6 border-t border-slate-100">
+            <h3 className="font-semibold text-slate-900 mb-2">Description</h3>
             <p className="text-muted-foreground text-sm leading-relaxed">
               {car.description}
             </p>
           </div>
 
-          {/* <Button className="w-full mt-4">Book Now</Button> */}
+          {/* Book Now */}
           <Button
-  className={`w-full mt-4 ${
-    car.status !== "available" ? "bg-gray-400 hover:bg-gray-400" : ""
-  }`}
-  disabled={car.status !== "available"}
->
-  {car.status === "available" ? "Book Now" : "Car Not Available"}
-</Button>
-
-        </CardContent>
-      </Card>
+            className={`w-full mt-6 py-6 text-base font-medium rounded-xl transition-all ${
+              car.status !== "available"
+                ? "bg-slate-200 text-slate-500 hover:bg-slate-200 cursor-not-allowed"
+                : "bg-slate-900 text-white hover:bg-slate-800 shadow-md hover:shadow-lg"
+            }`}
+            disabled={car.status !== "available"}>
+            {car.status === "available" ? "Book Now" : "Car Not Available"}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
 
-function Spec({ label, value }: { label: string; value: string }) {
+function Spec({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return (
-    <div className="bg-muted p-3 rounded-lg">
-      <p className="text-muted-foreground text-xs">{label}</p>
-      <p className="font-medium capitalize">{value}</p>
+    <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50">
+      <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0">
+        <Icon className="h-4 w-4 text-slate-600" />
+      </div>
+      <div>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-sm font-medium text-slate-900 capitalize">{value}</p>
+      </div>
     </div>
   );
 }

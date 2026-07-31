@@ -311,45 +311,70 @@ export async function deleteCar(id: string) {
     };
   }
 }
-export async function updateCarStatus(
-  id: string,
-  { status, featured }: { status?: string; featured?: boolean },
-) {
+// export async function updateCarStatus(
+//   id: string,
+//   { status, featured }: { status?: string; featured?: boolean },
+// ) {
+//   try {
+//     const session = await getServerSession(authOptions);
+//     if (!session) throw new Error("Unauthorized: No session found");
+//     // 2️⃣ DB + user
+//     await connectDb();
+//     const user = await User.findById(session.user.id);
+//     if (!user) throw new Error("User not found");
+
+//     const updateData: { status?: string; featured?: boolean } = {};
+
+//     if (status !== undefined) {
+//       updateData.status = status;
+//     }
+
+//     if (featured !== undefined) {
+//       updateData.featured = featured;
+//     }
+
+//     // Update the car
+//     await Car.findByIdAndUpdate(id, updateData);
+
+//     // Revalidate the cars list page
+//     revalidatePath("/admin/cars");
+
+//     return {
+//       success: true,
+
+//     };
+//   } catch (error) {
+//     console.error("Error updating car status:", error);
+//     return {
+//       success: false,
+//       error: error instanceof Error ? error.message : String(error),
+//     };
+//   }
+// }
+
+export const updateCarStatus = async (carId: string, status: string) => {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) throw new Error("Unauthorized: No session found");
-    // 2️⃣ DB + user
-    await connectDb();
-    const user = await User.findById(session.user.id);
-    if (!user) throw new Error("User not found");
-
-    const updateData: { status?: string; featured?: boolean } = {};
-
-    if (status !== undefined) {
-      updateData.status = status;
+    const normalizedStatus = status.toLowerCase();
+    const validStatuses = ["available", "unavailable", "booked", "maintenance"];
+    if (!validStatuses.includes(normalizedStatus)) {
+      return { success: false, error: "Invalid status value" };
     }
 
-    if (featured !== undefined) {
-      updateData.featured = featured;
+    const car = await Car.findByIdAndUpdate(
+      carId,
+      { status: normalizedStatus },
+      { new: true }
+    );
+
+    if (!car) {
+      return { success: false, error: "Car not found" };
     }
 
-    // Update the car
-    await Car.findByIdAndUpdate(id, updateData);
-
-    // Revalidate the cars list page
-    revalidatePath("/admin/cars");
-
-    return {
-      success: true,
-    };
+    return { success: true, car: serializeCarData(car) };
   } catch (error) {
-    console.error("Error updating car status:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    };
+    return { success: false, error: "Failed to update status" };
   }
-}
+};
 
 export async function getThreeCars() {
   try {
@@ -357,7 +382,8 @@ export async function getThreeCars() {
 
     const cars = await Car.find().sort({ createdAt: -1 }).limit(3).lean();
 
-    return JSON.parse(JSON.stringify(cars));
+    // return JSON.parse(JSON.stringify(cars));
+    return cars.map((car) => serializeCarData(car));
   } catch (error) {
     console.error("Error fetching featured cars:", error);
   }
@@ -369,7 +395,8 @@ export async function AllCars() {
 
     const cars = await Car.find().sort({ createdAt: -1 }).lean();
 
-    return JSON.parse(JSON.stringify(cars));
+    // return JSON.parse(JSON.stringify(cars));
+    return cars.map((car) => serializeCarData(car));
   } catch (error) {
     console.error("Error fetching featured cars:", error);
   }
@@ -397,14 +424,7 @@ export async function getCarById(carId: string) {
       };
     }
 
-    // ✅ Convert ALL non-serializable fields
-    const safeCar = {
-      ...car,
-      _id: car._id?.toString(),
-      createdBy: car.createdBy?.toString(),
-      createdAt: car.createdAt?.toISOString(),
-      updatedAt: car.updatedAt?.toISOString(),
-    };
+    const safeCar = serializeCarData(car);
 
     return {
       success: true,

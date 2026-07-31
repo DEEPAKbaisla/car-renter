@@ -13,7 +13,7 @@ interface carDocument {
   price: number;
   brand: string;
   model: string;
-  status: "available" | "unavailable";
+  status: "available" | "booked" | "maintenance";
   transmission: "manual" | "automatic" | "semi-automatic";
   fuelType: "petrol" | "diesel" | "electric" | "hybrid" | "cng";
   seats: number;
@@ -87,7 +87,7 @@ const carSchema = new mongoose.Schema<carDocument>(
 
     status: {
       type: String,
-      enum: ["available", "booked", "maintenance"],
+      enum: ["available", "unavailable", "booked", "maintenance"],
       default: "available",
     },
     trips: {

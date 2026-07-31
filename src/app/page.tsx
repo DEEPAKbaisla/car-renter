@@ -3,7 +3,7 @@ import dynamic from "next/dynamic";
 
 const HeroSection = dynamic(() => import("@/components/home/HeroSection"));
 const FeaturedCars = dynamic(() => import("@/components/home/FeaturedCars"), {
-  loading: () => <p>Loading cars...</p>,
+  loading: () => <p className="text-center">Loading cars...</p>,
 });
 const WhyChoose = dynamic(() => import("@/components/home/WhyChoose"));
 const FAQSection = dynamic(() => import("@/components/home/FAQSection"));
