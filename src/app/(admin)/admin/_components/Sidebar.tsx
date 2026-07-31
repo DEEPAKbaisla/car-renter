@@ -31,7 +31,7 @@ const Sidebar = () => {
   const pathname = usePathname();
   return (
     <>
-      <div className="hidden md:flex h-full flex-col overflow-y-auto bg-white border-r border-slate-200">
+      <nav aria-label="Admin navigation" className="hidden md:flex h-full flex-col overflow-y-auto bg-white border-r border-slate-200">
         {routes.map((route) => {
           const isActive = route.href === "/admin"
             ? pathname === "/admin"
@@ -40,6 +40,7 @@ const Sidebar = () => {
             <Link
               key={route.href}
               href={route.href}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 text-sm font-medium pl-6 pr-4 transition-all duration-200",
                 isActive
@@ -52,10 +53,10 @@ const Sidebar = () => {
             </Link>
           );
         })}
-      </div>
+      </nav>
 
       {/* Mobile bottom tabs */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 flex justify-around items-center h-16 safe-area-pb">
+      <nav aria-label="Admin navigation" className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 flex justify-around items-center h-16 safe-area-pb">
         {routes.map((route) => {
           const isActive = route.href === "/admin"
             ? pathname === "/admin"
@@ -64,6 +65,7 @@ const Sidebar = () => {
             <Link
               key={route.href}
               href={route.href}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
                 "flex flex-col items-center justify-center text-xs font-medium transition-all duration-200 py-1 flex-1",
                 isActive ? "text-slate-900" : "text-slate-400"
@@ -78,7 +80,7 @@ const Sidebar = () => {
             </Link>
           );
         })}
-      </div>
+      </nav>
     </>
   );
 };

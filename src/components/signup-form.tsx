@@ -15,8 +15,8 @@ import { Input } from "@/components/ui/input";
 import axios from "axios";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import React, { useState, useEffect, useCallback } from "react";
-import { Loader2, Mail, ArrowLeft, Check, X, Eye, EyeOff } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Loader2, ArrowLeft, Check, X, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -71,8 +71,8 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
       } else {
         toast.success("Account created! Please check your email for the verification code.");
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to create account");
+    } catch {
+      toast.error("Failed to create account");
     } finally {
       setIsLoading(false);
     }
@@ -97,8 +97,8 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
       } else {
         router.push("/login");
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Invalid OTP");
+    } catch {
+      toast.error("Invalid OTP");
     } finally {
       setIsVerifying(false);
     }
@@ -114,8 +114,8 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
       } else {
         toast.success("OTP resent! Check your email.");
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to resend OTP");
+    } catch {
+      toast.error("Failed to resend OTP");
     } finally {
       setIsResending(false);
     }
@@ -289,7 +289,7 @@ export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                    tabIndex={-1}>
+                    aria-label={showPassword ? "Hide password" : "Show password"}>
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>

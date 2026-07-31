@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ChevronRight, Home } from "lucide-react";
 import Link from "next/link";
+import { SerializedCar } from "@/types";
 
 interface PageProps {
   params: Promise<{
@@ -15,7 +16,7 @@ interface PageProps {
 }
 
 export default function CarPage({ params }: PageProps) {
-  const [carData, setCarData] = useState<any>(null);
+  const [carData, setCarData] = useState<SerializedCar | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,7 +31,7 @@ export default function CarPage({ params }: PageProps) {
         if (cancelled) return;
         if (!res.success) {
           setError("Car not found");
-        } else {
+        } else if (res.data) {
           setCarData(res.data);
         }
       } catch (err) {

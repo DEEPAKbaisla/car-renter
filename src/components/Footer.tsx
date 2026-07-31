@@ -1,4 +1,4 @@
-import { Facebook, Instagram, Twitter, Mail, ArrowRight } from "lucide-react";
+import { Facebook, Instagram, Twitter, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 const Footer = () => {
@@ -105,7 +105,7 @@ const Footer = () => {
 
         {/* Bottom Bar */}
         <div className="border-t border-slate-800 mt-10 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500">
-          <p>© 2025 RideOwn. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} RideOwn. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <a href="#" className="hover:text-slate-300 transition-colors">Terms</a>
             <a href="#" className="hover:text-slate-300 transition-colors">Privacy</a>

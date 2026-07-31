@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/table";
 import useFetch from "@/hooks/use-fetch";
 import { formatCurrencyINR } from "@/lib/helpers";
+import { SerializedCar } from "@/types";
 import {
   CarIcon,
   Eye,
@@ -46,7 +47,7 @@ import { toast } from "sonner";
 
 const CarList = () => {
   const [search, setSearch] = useState("");
-  const [carToDelete, setCarToDelete] = useState<any | null>(null);
+  const [carToDelete, setCarToDelete] = useState<SerializedCar | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const router = useRouter();
 
@@ -194,7 +195,6 @@ const CarList = () => {
                             width={44}
                             className="w-full h-full object-cover rounded-lg"
                             priority
-                            unoptimized
                           />
                         ) : (
                           <div className="w-full h-full bg-slate-100 rounded-lg flex items-center justify-center">

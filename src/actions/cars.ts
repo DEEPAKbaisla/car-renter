@@ -98,16 +98,13 @@ export async function processCarImageWithAI(file: File) {
         success: true,
         data: cardetails,
       };
-    } catch (parseError) {
-      console.error("Failed to parse AI response:", parseError);
-      console.log("Raw response:", text);
+    } catch {
       return {
         success: false,
         error: "Failed to parse AI response",
       };
     }
   } catch (error) {
-    console.error();
     throw new Error(
       "Gemini API error:" +
         (error instanceof Error ? error.message : String(error)),
@@ -123,7 +120,7 @@ interface ImageData {
 }
 
 interface AddCarParams {
-  carData: any;
+  carData: Record<string, unknown>;
   images: ImageData | ImageData[];
 }
 
@@ -214,16 +211,16 @@ export async function AddCar({ carData, images }: AddCarParams) {
       mileage: carData.mileage,
       bodyType: carData.bodyType,
 
-      type: carData.bodyType?.toLowerCase().includes("suv")
+      type: String(carData.bodyType ?? "").toLowerCase().includes("suv")
         ? "suv"
-        : carData.bodyType?.toLowerCase().includes("sedan")
+        : String(carData.bodyType ?? "").toLowerCase().includes("sedan")
           ? "sedan"
-          : carData.bodyType?.toLowerCase().includes("hatch")
+          : String(carData.bodyType ?? "").toLowerCase().includes("hatch")
             ? "hatchback"
             : "luxury",
 
-      transmission: carData.transmission.toLowerCase(),
-      fuelType: carData.fuelType.toLowerCase(),
+      transmission: String(carData.transmission).toLowerCase(),
+      fuelType: String(carData.fuelType).toLowerCase(),
 
       seats: Number(carData.seats ?? 5),
       price: Number(carData.price),
@@ -233,7 +230,6 @@ export async function AddCar({ carData, images }: AddCarParams) {
       createdBy: user._id,
     });
 
-    console.log("Saved car object:", car.toObject());
     revalidatePath("/admin/cars");
 
     return {
@@ -269,7 +265,7 @@ export async function getCars(search = "") {
       throw new Error("Unauthorized: Only admins can access this");
     }
 
-    let filter: any = {};
+    const filter: Record<string, unknown> = {};
 
     if (search) {
       filter.$or = [
@@ -319,7 +315,7 @@ export async function deleteCar(id: string) {
     // 🔥 Delete images from ImageKit
     if (Array.isArray(car.image) && car.image.length > 0) {
       await Promise.all(
-        car.image.map(async (img: any) => {
+        car.image.map(async (img: { url: string; fileId: string }) => {
           if (img?.fileId) {
             try {
               await imagekit.deleteFile(img.fileId);
@@ -347,46 +343,6 @@ export async function deleteCar(id: string) {
     };
   }
 }
-// export async function updateCarStatus(
-//   id: string,
-//   { status, featured }: { status?: string; featured?: boolean },
-// ) {
-//   try {
-//     const session = await getServerSession(authOptions);
-//     if (!session) throw new Error("Unauthorized: No session found");
-//     // 2️⃣ DB + user
-//     await connectDb();
-//     const user = await User.findById(session.user.id);
-//     if (!user) throw new Error("User not found");
-
-//     const updateData: { status?: string; featured?: boolean } = {};
-
-//     if (status !== undefined) {
-//       updateData.status = status;
-//     }
-
-//     if (featured !== undefined) {
-//       updateData.featured = featured;
-//     }
-
-//     // Update the car
-//     await Car.findByIdAndUpdate(id, updateData);
-
-//     // Revalidate the cars list page
-//     revalidatePath("/admin/cars");
-
-//     return {
-//       success: true,
-
-//     };
-//   } catch (error) {
-//     console.error("Error updating car status:", error);
-//     return {
-//       success: false,
-//       error: error instanceof Error ? error.message : String(error),
-//     };
-//   }
-// }
 
 export const updateCarStatus = async (carId: string, status: string) => {
   try {
@@ -418,7 +374,7 @@ export const updateCarStatus = async (carId: string, status: string) => {
     }
 
     return { success: true, car: serializeCarData(car) };
-  } catch (error) {
+  } catch {
     return { success: false, error: "Failed to update status" };
   }
 };
@@ -429,7 +385,6 @@ export async function getThreeCars() {
 
     const cars = await Car.find().sort({ createdAt: -1 }).limit(3).lean();
 
-    // return JSON.parse(JSON.stringify(cars));
     return cars.map((car) => serializeCarData(car));
   } catch (error) {
     console.error("Error fetching featured cars:", error);
@@ -442,14 +397,11 @@ export async function AllCars() {
 
     const cars = await Car.find().sort({ createdAt: -1 }).lean();
 
-    // return JSON.parse(JSON.stringify(cars));
     return cars.map((car) => serializeCarData(car));
   } catch (error) {
     console.error("Error fetching featured cars:", error);
   }
 }
-
-/////isko dekhana h abhi ...
 
 export async function getCarById(carId: string) {
   try {

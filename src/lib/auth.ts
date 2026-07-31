@@ -13,18 +13,18 @@ const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials, req) {
-        let email = credentials?.email;
-        let password = credentials?.password;
+      async authorize(credentials) {
+        const email = credentials?.email;
+        const password = credentials?.password;
         if (!email || !password) {
           throw new Error("email or password is not found");
         }
         await connectDb();
-        let user = await User.findOne({ email });
+        const user = await User.findOne({ email });
         if (!user) {
           throw new Error("user not found");
         }
-        let isMatch = await bcrypt.compare(password, user.password);
+        const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
           throw new Error("incorrect Password");
         }
@@ -51,18 +51,22 @@ const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ account, user }) {
       if (account?.provider === "google") {
-        await connectDb();
-        let existUser = await User.findOne({ email: user.email });
-        if (!existUser) {
-          existUser = await User.create({
-            email: user?.email,
-            name: user?.name,
-            role: "user",
-            isVerified: true,
-          });
+        try {
+          await connectDb();
+          let existUser = await User.findOne({ email: user.email });
+          if (!existUser) {
+            existUser = await User.create({
+              email: user?.email,
+              name: user?.name,
+              role: "user",
+              isVerified: true,
+            });
+          }
+          user.id = existUser._id as string;
+          (user as { role?: string }).role = existUser.role;
+        } catch {
+          return false;
         }
-        user.id = existUser._id as string;
-        (user as any).role = existUser.role;
       }
       return true;
     },
@@ -73,12 +77,16 @@ const authOptions: NextAuthOptions = {
         token.name = user.name;
         token.email = user.email;
         token.image = user.image;
-        token.role = (user as any).role;
+        token.role = (user as { role?: string }).role;
         token.isBlocked = false;
       } else if (token.id) {
-        await connectDb();
-        const dbUser = await User.findById(token.id).select("isBlocked");
-        token.isBlocked = dbUser?.isBlocked ?? false;
+        try {
+          await connectDb();
+          const dbUser = await User.findById(token.id).select("isBlocked");
+          token.isBlocked = dbUser?.isBlocked ?? false;
+        } catch {
+          // If DB fails, keep existing token.isBlocked value
+        }
       }
       return token;
     },

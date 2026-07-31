@@ -8,26 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Fuel, Gauge, Users, Palette, Calendar, Route } from "lucide-react";
 import BookingModal from "./booking-modal";
+import { SerializedCar } from "@/types";
 
 interface CarProps {
-  car?: {
-    id: string;
-    name: string;
-    brand: string;
-    model: string;
-    transmission: string;
-    fuelType: string;
-    seats: number;
-    price: number;
-    year: number;
-    color: string;
-    description: string;
-    mileage: number;
-    bodyType: string;
-    status: string;
-    trips: number;
-    image?: string[];
-  };
+  car?: SerializedCar;
 }
 
 export default function CarDetails({ car }: CarProps) {
@@ -65,6 +49,7 @@ export default function CarDetails({ car }: CarProps) {
             alt={car.name}
             fill
             priority
+            sizes="(max-width: 1024px) 100vw, 60vw"
             className="object-cover transition-all duration-300"
           />
         </div>
@@ -75,6 +60,15 @@ export default function CarDetails({ car }: CarProps) {
               <div
                 key={index}
                 onClick={() => setSelectedImage(index)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSelectedImage(index);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label={`View image ${index + 1}`}
                 className={`relative min-w-[80px] h-[64px] rounded-xl overflow-hidden cursor-pointer border-2 transition-all duration-200 ${
                   selectedImage === index
                     ? "border-slate-900 shadow-md"
@@ -82,8 +76,9 @@ export default function CarDetails({ car }: CarProps) {
                 }`}>
                 <Image
                   src={img}
-                  alt={`car-${index}`}
+                  alt={`${car.name} image ${index + 1}`}
                   fill
+                  sizes="80px"
                   className="object-cover"
                 />
               </div>
@@ -172,7 +167,7 @@ export default function CarDetails({ car }: CarProps) {
   );
 }
 
-function Spec({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+function Spec({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string }) {
   return (
     <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50">
       <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0">

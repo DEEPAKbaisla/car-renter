@@ -1,3 +1,5 @@
+import { SerializedCar } from "@/types";
+
 export const formatCurrencyINR = (amount: number): string => {
     return new Intl.NumberFormat("en-IN", {
         style: "currency",
@@ -10,42 +12,30 @@ export const formatCurrencyINR = (amount: number): string => {
 
 
 
-export const serializeCarData = (car: any, wishlisted = false) => {
+export const serializeCarData = (car: Record<string, unknown>, wishlisted = false): SerializedCar => {
   return {
-    id: car._id?.toString(), // ✅ use only id
-
-    // ❌ DO NOT spread car (this avoids _id leak)
-
-    name: car.name ?? "",
-    brand: car.brand ?? "",
-    model: car.model ?? "",
-    type: car.type ?? "",
-    transmission: car.transmission ?? "",
-    fuelType: car.fuelType ?? "",
-    seats: car.seats ?? 0,
-
-    year: car.year ?? null,
-    color: car.color ?? "",
-    mileage: car.mileage ?? 0,
-    bodyType: car.bodyType ?? "",
-    description: car.description ?? "",
+    id: String(car._id ?? ""),
+    name: String(car.name ?? ""),
+    brand: String(car.brand ?? ""),
+    model: String(car.model ?? ""),
+    type: String(car.type ?? ""),
+    transmission: String(car.transmission ?? ""),
+    fuelType: String(car.fuelType ?? ""),
+    seats: Number(car.seats ?? 0),
+    year: Number(car.year ?? 0),
+    color: String(car.color ?? ""),
+    mileage: Number(car.mileage ?? 0),
+    bodyType: String(car.bodyType ?? ""),
+    description: String(car.description ?? ""),
     price: Number(car.price) || 0,
-    status: car.status ?? "",
-    trips: car.trips ?? 0,
+    status: String(car.status ?? ""),
+    trips: Number(car.trips ?? 0),
     image: Array.isArray(car.image)
-      ? car.image.map((img: any) => (typeof img === "string" ? img : img?.url || ""))
+      ? car.image.map((img: unknown) => (typeof img === "string" ? img : (img as Record<string, string>)?.url || ""))
       : [],
-
-    createdBy: car.createdBy ? car.createdBy.toString() : null,
-
-    createdAt: car.createdAt
-      ? new Date(car.createdAt).toISOString()
-      : null,
-
-    updatedAt: car.updatedAt
-      ? new Date(car.updatedAt).toISOString()
-      : null,
-
+    createdBy: car.createdBy ? String(car.createdBy) : null,
+    createdAt: car.createdAt ? new Date(String(car.createdAt)).toISOString() : "",
+    updatedAt: car.updatedAt ? new Date(String(car.updatedAt)).toISOString() : "",
     wishlisted,
   };
 };

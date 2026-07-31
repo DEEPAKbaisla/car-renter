@@ -1,8 +1,8 @@
 import { connect } from "mongoose";
 
-let mongodbUrl = process.env.MONGODB_URI;
+const mongodbUrl = process.env.MONGODB_URI;
 if (!mongodbUrl) {
-  throw new Error("mongodb url is not found..");
+  throw new Error("MONGODB_URI environment variable is not defined");
 }
 
 let cached = global.mongoose;
@@ -19,8 +19,8 @@ const connectDb = async () => {
   }
   try {
     cached.conn = await cached.promise;
-   
   } catch (error) {
+    cached.promise = null;
     throw error;
   }
   return cached.conn;

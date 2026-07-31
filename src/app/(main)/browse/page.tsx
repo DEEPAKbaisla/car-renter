@@ -6,11 +6,13 @@ import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
 import { Users, Search, Car as CarIcon } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { CarCardSkeletonGrid } from "@/components/ui/car-card-skeleton";
+import { SerializedCar } from "@/types";
 
 const BrowseCars = () => {
-  const [allCars, setAllCars] = useState<any[]>([]);
+  const [allCars, setAllCars] = useState<SerializedCar[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -33,7 +35,7 @@ const BrowseCars = () => {
     fetchCars();
   }, []);
 
-  const filteredCars = allCars.filter((car: any) =>
+  const filteredCars = allCars.filter((car) =>
     car.name.toLowerCase().includes(search.toLowerCase()) ||
     car.type?.toLowerCase().includes(search.toLowerCase())
   );
@@ -93,14 +95,16 @@ const BrowseCars = () => {
               Showing {filteredCars.length} car{filteredCars.length !== 1 ? "s" : ""}
             </p>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCars.map((car: any) => (
+              {filteredCars.map((car) => (
                 <Link key={car.id} href={`/car/${car.id}`}>
                   <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-slate-100 transition-all duration-300 hover:-translate-y-1 group h-full flex flex-col">
                     <div className="relative aspect-[16/10] overflow-hidden">
-                      <img
+                      <Image
                         src={car.image[0]}
                         alt={car.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>

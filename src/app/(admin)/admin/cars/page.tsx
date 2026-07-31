@@ -1,5 +1,7 @@
 import CarList from "./_components/car-list";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Cars | RideOwn",
   description: "Manage cars for RideOwn car marketplace",

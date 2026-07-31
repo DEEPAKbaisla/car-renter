@@ -1,11 +1,11 @@
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
-type AsyncFn<TArgs extends any[], TResult> = (
+type AsyncFn<TArgs extends unknown[], TResult> = (
   ...args: TArgs
 ) => Promise<TResult>;
 
-const useFetch = <TResult, TArgs extends any[] = []>(
+const useFetch = <TResult, TArgs extends unknown[] = []>(
   cb: AsyncFn<TArgs, TResult>
 ) => {
   const [data, setData] = useState<TResult | undefined>(undefined);

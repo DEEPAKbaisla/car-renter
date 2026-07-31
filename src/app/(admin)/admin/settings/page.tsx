@@ -1,5 +1,7 @@
 import UserManagement from "./_components/user-management";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Settings | RideOwn",
   description: "Manage users and settings for RideOwn",

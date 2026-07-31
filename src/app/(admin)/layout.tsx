@@ -1,8 +1,8 @@
 import Header from "@/components/header";
-import React from "react";
+import { ReactNode } from "react";
 import Sidebar from "./admin/_components/Sidebar";
 
-const Layout = ({ children }: { children: React.ReactNode }) => {
+const Layout = ({ children }: { children: ReactNode }) => {
   return (
     <div className="h-screen bg-slate-50/50">
       <header className="fixed top-0 w-full z-50">

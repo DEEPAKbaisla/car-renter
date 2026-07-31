@@ -58,9 +58,10 @@ export async function POST(req: NextRequest) {
 
     const otpBuf = Buffer.from(String(otp), "utf8");
     const storedBuf = Buffer.from(String(otpData.otp), "utf8");
-    const otpValid =
-      otpBuf.length === storedBuf.length &&
-      crypto.timingSafeEqual(otpBuf, storedBuf);
+    let otpValid = false;
+    if (otpBuf.length === storedBuf.length) {
+      otpValid = crypto.timingSafeEqual(otpBuf, storedBuf);
+    }
 
     if (!otpValid) {
       return NextResponse.json(
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const user = await User.create({
+    await User.create({
       name: otpData.name,
       email: otpData.email,
       password: otpData.hashedPassword,

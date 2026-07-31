@@ -3,11 +3,14 @@ import { getServerSession } from "next-auth";
 import authOptions from "@/lib/auth";
 import connectDb from "@/lib/db";
 import Booking from "@/model/booking";
+import { BookingStatus } from "@/model/booking";
+
+const VALID_STATUSES: BookingStatus[] = ["pending_payment", "confirmed", "cancelled", "completed"];
 
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id || (session.user as any).role !== "admin") {
+    if (!session?.user?.id || session.user.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -15,26 +18,28 @@ export async function GET(req: NextRequest) {
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
     const status = searchParams.get("status");
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "10")));
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "10") || 10));
     const skip = (page - 1) * limit;
 
     await connectDb();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const query: any = {};
+    const query: Record<string, unknown> = {};
 
     if (status && status !== "all") {
+      if (!VALID_STATUSES.includes(status as BookingStatus)) {
+        return NextResponse.json({ error: "Invalid status value" }, { status: 400 });
+      }
       query.status = status;
     }
 
     if (startDate || endDate) {
-      query.startDate = {};
+      query.startDate = {} as Record<string, Date>;
       if (startDate) {
-        query.startDate.$gte = new Date(startDate);
+        (query.startDate as Record<string, Date>).$gte = new Date(startDate);
       }
       if (endDate) {
-        query.startDate.$lte = new Date(endDate);
+        (query.startDate as Record<string, Date>).$lte = new Date(endDate);
       }
     }
 

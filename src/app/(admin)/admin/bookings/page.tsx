@@ -1,5 +1,7 @@
 import BookingsList from "./_components/bookings-list";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Bookings | RideOwn Admin",
   description: "Manage all bookings for RideOwn",

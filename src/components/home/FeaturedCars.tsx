@@ -6,9 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { CarCardSkeletonGrid } from "@/components/ui/car-card-skeleton";
 import { Users, ArrowRight } from "lucide-react";
 import { getThreeCars } from "@/actions/cars";
+import { SerializedCar } from "@/types";
 
 const FeaturedCars = () => {
-  const [featuredCars, setFeaturedCars] = useState<any[]>([]);
+  const [featuredCars, setFeaturedCars] = useState<SerializedCar[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

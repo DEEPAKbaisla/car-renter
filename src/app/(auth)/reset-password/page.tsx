@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import axios from "axios";
 import { Loader2, KeyRound, ArrowLeft, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
 import { toast } from "sonner";
 import { Check, X } from "lucide-react";
@@ -29,7 +29,6 @@ function getPasswordStrength(password: string): { score: number; label: string; 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token") || "";
-  const router = useRouter();
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -59,8 +58,9 @@ function ResetPasswordForm() {
       await axios.post("/api/auth/reset-password", { token, password, confirmPassword });
       setSuccess(true);
       toast.success("Password reset successful!");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to reset password");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to reset password";
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -136,7 +136,7 @@ function ResetPasswordForm() {
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                      tabIndex={-1}>
+                      aria-label={showPassword ? "Hide password" : "Show password"}>
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
@@ -187,7 +187,7 @@ function ResetPasswordForm() {
                       type="button"
                       onClick={() => setShowConfirm(!showConfirm)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                      tabIndex={-1}>
+                      aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}>
                       {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>

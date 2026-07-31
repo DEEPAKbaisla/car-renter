@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Antonio } from "next/font/google";
 import "./globals.css";
 import ClientProvider from "@/ClientProvider";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { LoadingBar } from "@/components/ui/loading-bar";
 
 

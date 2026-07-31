@@ -39,7 +39,7 @@ export async function getUsers(search = "", page = 1, limit = 10) {
       return { success: false, error: "Unauthorized: Admin only" };
     }
 
-    let filter: any = {};
+    const filter: Record<string, unknown> = {};
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: "i" } },
@@ -132,7 +132,7 @@ export async function updateUserRole(userId: string, role: string) {
         isBlocked: updatedUser.isBlocked ?? false,
       },
     };
-  } catch (error) {
+  } catch {
     return { success: false, error: "Failed to update user role" };
   }
 }
@@ -179,7 +179,7 @@ export async function toggleUserBlock(userId: string) {
         isBlocked: user.isBlocked,
       },
     };
-  } catch (error) {
+  } catch {
     return { success: false, error: "Failed to toggle user block" };
   }
 }
